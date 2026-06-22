@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IoT Irrigation System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>🌱 IoT Irrigation Dashboard</h1>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h3>Soil Moisture</h3>
+            <h1 id="soil">0%</h1>
+        </div>
+
+        <div class="card">
+            <h3>Temperature</h3>
+            <h1 id="temp">0°C</h1>
+        </div>
+
+        <div class="card">
+            <h3>Humidity</h3>
+            <h1 id="hum">0%</h1>
+        </div>
+
+        <div class="card">
+            <h3>Tank Level</h3>
+            <h1 id="tank">---</h1>
+        </div>
+
+        <div class="card">
+            <h3>Water Flow</h3>
+            <h1 id="flow">0 L/min</h1>
+        </div>
+
+        <div class="card">
+            <h3>Pump Status</h3>
+            <h1 id="pump">OFF</h1>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button class="green" onclick="pumpOn()">START</button>
+        <button class="red" onclick="pumpOff()">STOP</button> <button class="blue" id="btn-auto" onclick="autoMode()">AUTO</button> <button class="orange" id="btn-manual" onclick="manualMode()">MANUAL</button> </div>
+
+    <div class="chartbox">
+        <canvas id="soilChart"></canvas>
+    </div>
+
+    <script src="For MQTT.js"></script> 
+
+</body>
+</html>
