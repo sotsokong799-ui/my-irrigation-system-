@@ -12,6 +12,32 @@ client.on('connect', () => {
     // ភ្ជាប់ទៅកាន់ Topic ដើម្បីស្តាប់តម្លៃពី ESP32 (បើមាន)
     client.subscribe('esp32/sensor_data'); 
 });
+
+// មុខងារបញ្ជាប៊ូតុង START (ត្រូវលុបពាក្យ void ចោល)
+function pumpOn() {
+    client.publish('esp32/pump', 'ON');
+    document.getElementById('pump').innerText = "ON";
+    console.log("Sent: Pump ON");
+}
+
+// មុខងារបញ្ជាប៊ូតុង STOP (ត្រូវលុបពាក្យ void ចោល)
+function pumpOff() {
+    client.publish('esp32/pump', 'OFF');
+    document.getElementById('pump').innerText = "OFF";
+    console.log("Sent: Pump OFF");
+}
+
+// មុខងារបញ្ជាប៊ូតុង AUTO
+function autoMode() {
+    client.publish('esp32/mode', 'AUTO');
+    console.log("Sent: AUTO Mode");
+}
+
+// មុខងារបញ្ជាប៊ូតុង MANUAL
+function manualMode() {
+    client.publish('esp32/mode', 'MANUAL');
+    console.log("Sent: MANUAL Mode");
+}
 // --- កូដបញ្ជាប៊ូតុងកែសម្រួលអក្សរធំ (ត្រូវនឹង HTML ១០០%) ---
 function pumpON() {
   if (client && client.connected) {
