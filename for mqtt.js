@@ -1,4 +1,4 @@
-// ================= ១. ការភ្ជាប់ទៅ EMQX Cloud =================
+// ================= ១. ការភ្ជាប់ទៅ EMQX Cloud (Port 8084 សម្រាប់ HTTPS) =================
 const options = {
     username: 'KONG@29',
     password: '29072003KONG', 
@@ -25,37 +25,31 @@ client.on('connect', () => {
     client.subscribe("irrigation/mode");
 });
 
-// ================= ២. ទទួលទិន្នន័យមកបង្ហាញលើ Web =================
+// ================= ២. ទទួលទិន្នន័យមកបង្ហាញលើ Web (Real-time) =================
 client.on('message', (topic, payload) => {
     const message = payload.toString().trim();
     console.log(`Received [${topic}]: ${message}`);
 
-    // ប្តូរតម្លៃកំដៅ
     if (topic === "irrigation/temp") {
         const element = document.getElementById('temp'); 
         if(element) element.innerText = message + "°C";
     }
-    // ប្តូរសំណើមដី (កូដ HTML របស់អ្នកប្រើ id="num" សម្រាប់ដី)
     if (topic === "irrigation/soil") {
-        const element = document.getElementById('num') || document.getElementById('soil'); 
+        const element = document.getElementById('soil'); 
         if(element) element.innerText = message + "%";
     }
-    // ប្តូរសំណើមខ្យល់
     if (topic === "irrigation/humidity") {
-        const element = document.getElementById('humidity'); 
+        const element = document.getElementById('hum'); // ត្រូវនឹង id="hum" ក្នុង HTML
         if(element) element.innerText = message + "%";
     }
-    // ប្តូរស្ថានភាពធុងទឹក
     if (topic === "irrigation/tank") {
         const element = document.getElementById('tank'); 
         if(element) element.innerText = message;
     }
-    // ប្តូរល្បឿនទឹកហូរ
     if (topic === "irrigation/flow") {
         const element = document.getElementById('flow'); 
         if(element) element.innerText = message + " L/min";
     }
-    // ប្តូរស្ថានភាពស្នប់ទឹក (id="pump" ក្នុង HTML)
     if (topic === "irrigation/pump") {
         const element = document.getElementById('pump'); 
         if(element) {
@@ -65,26 +59,25 @@ client.on('message', (topic, payload) => {
     }
 });
 
-// ================= ៣. មុខងារបញ្ជាប៊ូតុង (អក្សរធំត្រូវនឹង HTML) =================
-function pumpON() {
+// ================= ៣. មុខងារបញ្ជាប៊ូតុង (ត្រូវនឹង onclick របស់ HTML) =================
+function pumpOn() {
     if (client && client.connected) {
         client.publish("esp32/pump", "ON");
-        console.log("Sent: ON");
+        console.log("Sent: ON to esp32/pump");
         const element = document.getElementById('pump');
         if(element) { element.innerText = "ON"; element.style.color = "green"; }
     }
 }
 
-function pumpOFF() {
+function pumpOff() {
     if (client && client.connected) {
         client.publish("esp32/pump", "OFF");
-        console.log("Sent: OFF");
+        console.log("Sent: OFF to esp32/pump");
         const element = document.getElementById('pump');
         if(element) { element.innerText = "OFF"; element.style.color = "red"; }
     }
 }
 
-// ប៊ូតុង AUTO លើ HTML (onclick="autoMode()")
 function autoMode() {
     if (client && client.connected) {
         client.publish("esp32/mode", "AUTO");
@@ -92,7 +85,6 @@ function autoMode() {
     }
 }
 
-// ប៊ូតុង MANUAL លើ HTML (onclick="manualMode()")
 function manualMode() {
     if (client && client.connected) {
         client.publish("esp32/mode", "MANUAL");
