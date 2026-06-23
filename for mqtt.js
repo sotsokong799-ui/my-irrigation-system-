@@ -12,18 +12,22 @@ client.on('connect', () => {
     // ភ្ជាប់ទៅកាន់ Topic ដើម្បីស្តាប់តម្លៃពី ESP32 (បើមាន)
     client.subscribe('esp32/sensor_data'); 
 });
-// --- កូដបញ្ជាប៊ូតុងបន្ថែម ---
-function pumpOn() {
+// --- កូដបញ្ជាប៊ូតុងកែសម្រួលអក្សរធំ (ត្រូវនឹង HTML ១០០%) ---
+function pumpON() {
   if (client && client.connected) {
     client.publish("esp32/pump", "ON");
     console.log("Sent: ON to esp32/pump");
+  } else {
+    console.log("MQTT Not Connected!");
   }
 }
 
-function pumpOff() {
+function pumpOFF() {
   if (client && client.connected) {
     client.publish("esp32/pump", "OFF");
     console.log("Sent: OFF to esp32/pump");
+  } else {
+    console.log("MQTT Not Connected!");
   }
 }
 
