@@ -16,8 +16,7 @@ const client = mqtt.connect('wss://z2b71312.ala.dedicated.aws.emqxcloud.com:8084
 client.on('connect', () => {
     console.log('Connected to EMQX Successfully!');
     // ឱ្យ Web ចាំស្តាប់រាល់ទិន្នន័យពី ESP32
-    client.subscribe("irrigation/temp");
-    client.subscribe("irrigation/humidity");
+    client.subscribe("irrigation/voltage");
     client.subscribe("irrigation/soil");
     client.subscribe("irrigation/tank");
     client.subscribe("irrigation/flow");
