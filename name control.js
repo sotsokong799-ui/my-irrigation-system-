@@ -1,31 +1,15 @@
-function pumpON()
-{
-client.publish(
-"irrigation/control",
-"ON"
-);
+function pumpOn() {
+  client.publish("esp32/pump", "ON");
 }
 
-function pumpOFF()
-{
-client.publish(
-"irrigation/control",
-"OFF"
-);
+function pumpOff() {
+  client.publish("esp32/pump", "OFF");
 }
 
-function autoMode()
-{
-client.publish(
-"irrigation/control",
-"AUTO"
-);
+function autoMode() {
+  client.publish("esp32/mode", "AUTO");
 }
 
-function manualMode()
-{
-client.publish(
-"irrigation/control",
-"MANUAL"
-);
+function manualMode() {
+  client.publish("esp32/mode", "MANUAL");
 }
