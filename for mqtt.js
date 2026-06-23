@@ -12,8 +12,6 @@ client.on('connect', () => {
     // ភ្ជាប់ទៅកាន់ Topic ដើម្បីស្តាប់តម្លៃពី ESP32 (បើមាន)
     client.subscribe('esp32/sensor_data'); 
 });
-
-
 // --- កូដបញ្ជាប៊ូតុងបន្ថែម ---
 function pumpOn() {
   if (client && client.connected) {
