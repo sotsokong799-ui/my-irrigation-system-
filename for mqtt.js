@@ -15,8 +15,8 @@ const client = mqtt.connect('wss://z2b71312.ala.dedicated.aws.emqxcloud.com:8084
 
 client.on('connect', () => {
     console.log('Connected to EMQX Successfully!');
-    // ឱ្យ Web ចាំស្តាប់រាល់ទិន្នន័យពី ESP32
-    client.subscribe("irrigation/voltage");
+    // ឱ្យ Web ចាំស្តាប់រាល់ទិន្នន័យពី ESP32 តាម Topic នីមួយៗ
+    client.subscribe("irrigation/voltage"); // ចាំស្តាប់តម្លៃវ៉ុល
     client.subscribe("irrigation/soil");
     client.subscribe("irrigation/tank");
     client.subscribe("irrigation/flow");
@@ -29,16 +29,13 @@ client.on('message', (topic, payload) => {
     const message = payload.toString().trim();
     console.log(`Received [${topic}]: ${message}`);
 
-    if (topic === "irrigation/temp") {
-        const element = document.getElementById('temp'); 
-        if(element) element.innerText = message + "°C";
+    // ◀️ កែតម្រូវត្រង់នេះ៖ ទទួលតម្លៃវ៉ុល រួចបង្ហាញទៅកាន់ id="volt" ក្នុង HTML
+    if (topic === "irrigation/voltage") {
+        const element = document.getElementById('volt'); 
+        if(element) element.innerText = message + " V";
     }
     if (topic === "irrigation/soil") {
         const element = document.getElementById('soil'); 
-        if(element) element.innerText = message + "%";
-    }
-    if (topic === "irrigation/humidity") {
-        const element = document.getElementById('hum'); // ត្រូវនឹង id="hum" ក្នុង HTML
         if(element) element.innerText = message + "%";
     }
     if (topic === "irrigation/tank") {
@@ -56,6 +53,16 @@ client.on('message', (topic, payload) => {
             element.style.color = (message === "ON") ? "green" : "red";
         }
     }
+    if (topic === "irrigation/mode") { // ◀️ បន្ថែមការបង្ហាញ Mode លើ Web ពេលដូរតាមអេក្រង់ TFT
+        const element = document.getElementById('btn-auto');
+        const elementManual = document.getElementById('btn-manual');
+        // កូដនេះគ្រាន់តែជួយចំណាំពណ៌ប៊ូតុងលើ Web ឱ្យត្រូវតាម Mode
+        if(message === "AUTO") {
+            console.log("Current Mode: AUTO");
+        } else {
+            console.log("Current Mode: MANUAL");
+        }
+    }
 });
 
 // ================= ៣. មុខងារបញ្ជាប៊ូតុង (ត្រូវនឹង onclick របស់ HTML) =================
@@ -68,6 +75,7 @@ function pumpOn() {
     }
 }
 
+// មុខងារប៊ូតុង STOP
 function pumpOff() {
     if (client && client.connected) {
         client.publish("esp32/pump", "OFF");
@@ -77,6 +85,7 @@ function pumpOff() {
     }
 }
 
+// មុខងារប៊ូតុង AUTO
 function autoMode() {
     if (client && client.connected) {
         client.publish("esp32/mode", "AUTO");
@@ -84,6 +93,7 @@ function autoMode() {
     }
 }
 
+// មុខងារប៊ូតុង MANUAL
 function manualMode() {
     if (client && client.connected) {
         client.publish("esp32/mode", "MANUAL");
