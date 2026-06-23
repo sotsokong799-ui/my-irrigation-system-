@@ -13,28 +13,32 @@ client.on('connect', () => {
     client.subscribe('esp32/sensor_data'); 
 });
 
-// មុខងារបញ្ជាប៊ូតុង START (ត្រូវលុបពាក្យ void ចោល)
+
+// --- កូដបញ្ជាប៊ូតុងបន្ថែម ---
 function pumpOn() {
-    client.publish('esp32/pump', 'ON');
-    document.getElementById('pump').innerText = "ON";
-    console.log("Sent: Pump ON");
+  if (client && client.connected) {
+    client.publish("esp32/pump", "ON");
+    console.log("Sent: ON to esp32/pump");
+  }
 }
 
-// មុខងារបញ្ជាប៊ូតុង STOP (ត្រូវលុបពាក្យ void ចោល)
 function pumpOff() {
-    client.publish('esp32/pump', 'OFF');
-    document.getElementById('pump').innerText = "OFF";
-    console.log("Sent: Pump OFF");
+  if (client && client.connected) {
+    client.publish("esp32/pump", "OFF");
+    console.log("Sent: OFF to esp32/pump");
+  }
 }
 
-// មុខងារបញ្ជាប៊ូតុង AUTO
 function autoMode() {
-    client.publish('esp32/mode', 'AUTO');
-    console.log("Sent: AUTO Mode");
+  if (client && client.connected) {
+    client.publish("esp32/mode", "AUTO");
+    console.log("Sent: AUTO to esp32/mode");
+  }
 }
 
-// មុខងារបញ្ជាប៊ូតុង MANUAL
 function manualMode() {
-    client.publish('esp32/mode', 'MANUAL');
-    console.log("Sent: MANUAL Mode");
+  if (client && client.connected) {
+    client.publish("esp32/mode", "MANUAL");
+    console.log("Sent: MANUAL to esp32/mode");
+  }
 }
