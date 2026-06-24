@@ -68,8 +68,8 @@ function connectToMQTT() {
 
     client.on('connect', () => {
         console.log('Connected to EMQX Successfully!');
-        client.subscribe("irrigation/voltage");
-        client.subscribe("irrigation/soil");
+        client.subscribe("irrigation/voltage_ac");
+        client.subscribe("irrigation/voltage_dc");
         client.subscribe("irrigation/tank");
         client.subscribe("irrigation/flow");
         client.subscribe("irrigation/pump");
@@ -83,13 +83,13 @@ function connectToMQTT() {
         const message = payload.toString().trim();
         console.log(`Received [${topic}]: ${message}`);
 
-        if (topic === "irrigation/voltage") {
+        if (topic === "irrigation/voltage_ac") {
             const element = document.getElementById('volt'); 
             if(element) element.innerText = message + " V";
         }
-        if (topic === "irrigation/soil") {
-            const element = document.getElementById('soil'); 
-            if(element) element.innerText = message + "%";
+        if (topic === "irrigation/voltage_dc") {
+            const element = document.getElementById('volt'); 
+            if(element) element.innerText = message + " V";
         }
         if (topic === "irrigation/tank") {
             const element = document.getElementById('tank'); 
