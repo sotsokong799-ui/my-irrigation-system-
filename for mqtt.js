@@ -52,8 +52,8 @@ function addLog(actionText, color = '#333') {
 
 // ================= ២. ការភ្ជាប់ទៅ EMQX Cloud =================
 const options = {
-  username: 'YOUR_MQTT_USERNAME', // 
-  password: 'YOUR_MQTT_PASSWORD', // 
+  username: 'KONG@29',      // 🛠️ ដាក់ Username របស់បងចូលនៅពេល Deploy ប្រើពិតប្រាកដ
+  password: '29072003KONG',  // 🛠️ ដាក់ Password របស់បងចូលនៅពេល Deploy ប្រើពិតប្រាកដ
   keepalive: 60,
   clientId: 'web_dashboard_' + Math.random().toString(16).substr(2, 8),
   protocolId: 'MQTT',
@@ -64,7 +64,7 @@ const options = {
 };
 
 function connectToMQTT() {
-client = mqtt.connect('wss://gb0066f0.ala.us-east-1.emqxsl.com:8084/mqtt', options);
+    client = mqtt.connect('wss://gb0066f0.ala.us-east-1.emqxsl.com:8084/mqtt', options);
 
     client.on('connect', () => {
         console.log('Connected to EMQX Successfully!');
@@ -83,12 +83,14 @@ client = mqtt.connect('wss://gb0066f0.ala.us-east-1.emqxsl.com:8084/mqtt', optio
         const message = payload.toString().trim();
         console.log(`Received [${topic}]: ${message}`);
 
+        // 🛠️ ឡែកផ្នែកបង្ហាញវ៉ុល AC (ប្រសិនបើក្នុង HTML របស់បងមាន ID ផ្សេងគ្នា ដូចជា 'volt_ac')
         if (topic === "irrigation/voltage_ac") {
-            const element = document.getElementById('volt'); 
+            const element = document.getElementById('volt_ac') || document.getElementById('volt'); 
             if(element) element.innerText = message + " V";
         }
+        // 🛠️ ឡែកផ្នែកបង្ហាញវ៉ុល DC
         if (topic === "irrigation/voltage_dc") {
-            const element = document.getElementById('volt'); 
+            const element = document.getElementById('volt_dc'); 
             if(element) element.innerText = message + " V";
         }
         if (topic === "irrigation/tank") {
@@ -130,10 +132,10 @@ client = mqtt.connect('wss://gb0066f0.ala.us-east-1.emqxsl.com:8084/mqtt', optio
     });
 }
 
-// ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard =================
+// ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard (🛠️ កែសម្រួល Topics ឱ្យត្រូវនឹង ESP32 ថ្មី) =================
 function pumpOn() {
     if (client && client.connected) {
-        client.publish("esp32/pump", "ON");
+        client.publish("irrigation/pump", "ON"); // 🛠️ ប្តូរពី esp32/pump -> irrigation/pump
         addLog("User clicked [START] button from Web Dashboard.", "#27ae60");
     }
 }
@@ -141,7 +143,7 @@ function pumpOn() {
 // មុខងារ STOP
 function pumpOff() {
     if (client && client.connected) {
-        client.publish("esp32/pump", "OFF");
+        client.publish("irrigation/pump", "OFF"); // 🛠️ ប្តូរពី esp32/pump -> irrigation/pump
         addLog("User clicked [STOP] button from Web Dashboard.", "#c0392b");
     }
 }
@@ -149,7 +151,7 @@ function pumpOff() {
 // មុខងារ AUTO
 function autoMode() {
     if (client && client.connected) {
-        client.publish("esp32/mode", "AUTO");
+        client.publish("irrigation/mode", "AUTO"); // 🛠️ ប្តូរពី esp32/mode -> irrigation/mode
         addLog("User clicked [AUTO] mode from Web Dashboard.", "#2980b9");
     }
 }
@@ -157,7 +159,7 @@ function autoMode() {
 // មុខងារ MANUAL
 function manualMode() {
     if (client && client.connected) {
-        client.publish("esp32/mode", "MANUAL");
+        client.publish("irrigation/mode", "MANUAL"); // 🛠️ ប្តូរពី esp32/mode -> irrigation/mode
         addLog("User clicked [MANUAL] mode from Web Dashboard.", "#d35400");
     }
 }
