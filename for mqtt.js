@@ -64,7 +64,7 @@ const options = {
 };
 
 function connectToMQTT() {
-    client = mqtt.connect('wss://gb0066f0.ala.us-east-1.emqxsl.com:8084/mqtt', options);
+client = mqtt.connect('wss://gb0066f0.ala.us-east-1.emqxsl.com:8084/mqtt', options);
 
     client.on('connect', () => {
         console.log('Connected to EMQX Successfully!');
