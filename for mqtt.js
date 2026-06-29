@@ -52,15 +52,15 @@ function addLog(actionText, color = '#333') {
 
 // ================= ២. ការភ្ជាប់ទៅ EMQX Cloud =================
 const options = {
-    username: ' ',
-    password: ' ', 
-    keepalive: 60,
-    clientId: 'web_dashboard_' + Math.random().toString(16).substr(2, 8),
-    protocolId: 'MQTT',
-    protocolVersion: 4,
-    clean: true,
-    reconnectPeriod: 1000,
-    connectTimeout: 30 * 1000
+  username: 'YOUR_MQTT_USERNAME', // 
+  password: 'YOUR_MQTT_PASSWORD', // 
+  keepalive: 60,
+  clientId: 'web_dashboard_' + Math.random().toString(16).substr(2, 8),
+  protocolId: 'MQTT',
+  protocolVersion: 4,
+  clean: true,
+  reconnectPeriod: 1000,
+  connectTimeout: 30 * 1000
 };
 
 function connectToMQTT() {
