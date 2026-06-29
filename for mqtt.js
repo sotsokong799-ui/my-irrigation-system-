@@ -6,7 +6,7 @@ let lastModeState = "";
 // ================= ០. មុខងារត្រួតពិនិត្យការ Login =================
 function checkPassword() {
     const passwordEntered = document.getElementById('passwordInput').value;
-    const correctPassword = "​​88888999"; // Password សម្រាប់ចូលប្រព័ន្ធ
+    const correctPassword = "​​29072003"; // Password សម្រាប់ចូលប្រព័ន្ធ
     const errorMsg = document.getElementById('errorMessage');
 
     if (passwordEntered === correctPassword) {
