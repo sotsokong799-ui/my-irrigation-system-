@@ -6,7 +6,7 @@ let lastModeState = "";
 // ================= ០. មុខងារត្រួតពិនិត្យការ Login =================
 function checkPassword() {
     const passwordEntered = document.getElementById('passwordInput').value;
-    const correctPassword = "​​Password"; // Password សម្រាប់ចូលប្រព័ន្ធ
+    const correctPassword = "​​88888999"; // Password សម្រាប់ចូលប្រព័ន្ធ
     const errorMsg = document.getElementById('errorMessage');
 
     if (passwordEntered === correctPassword) {
@@ -52,8 +52,8 @@ function addLog(actionText, color = '#333') {
 
 // ================= ២. ការភ្ជាប់ទៅ EMQX Cloud =================
 const options = {
-  username: 'KONG@29',      // 🛠️ ដាក់ Username របស់បងចូលនៅពេល Deploy ប្រើពិតប្រាកដ
-  password: '29072003KONG',  // 🛠️ ដាក់ Password របស់បងចូលនៅពេល Deploy ប្រើពិតប្រាកដ
+  username: 'KONG@29',     
+  password: '29072003KONG',  
   keepalive: 60,
   clientId: 'web_dashboard_' + Math.random().toString(16).substr(2, 8),
   protocolId: 'MQTT',
