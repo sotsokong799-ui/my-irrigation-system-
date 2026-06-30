@@ -3,32 +3,22 @@ let client;
 let lastPumpState = "";
 let lastModeState = "";
 
-// ================= ០. មុខងារត្រួតពិនិត្យការ Login (កំណែទម្រង់ការពារ Bug អក្សរ) =================
+// ================= ០. មុខងារត្រួតពិនិត្យការ Login =================
 function checkPassword() {
-    // ចាប់យកតម្លៃពីប្រអប់បញ្ចូល ហើយបំប្លែងវាទៅជាអក្សរធម្មតា និងលុបចន្លោះទំនេរចេញទាំងស្រុង
     const passwordEntered = document.getElementById('passwordInput').value.trim();
-    
-    // 🔐 កំណត់លេខសម្ងាត់ថ្មី (សរសេរជាលេខសុទ្ធ ដើម្បីការពារ Bug អក្សរលាក់ភ្នែក)
     const correctPassword = "29072003"; 
-
     const errorMsg = document.getElementById('errorMessage');
 
     if (passwordEntered === correctPassword) {
-        // បើត្រូវ៖ លាក់ផ្ទាំង Login រួចបង្ហាញផ្ទាំង Dashboard
         document.getElementById('loginContainer').style.display = 'none';
         document.getElementById('dashboardContainer').style.display = 'block';
-        
-        // ចាប់ផ្តើមដំណើរការភ្ជាប់ទៅកាន់ MQTT Broker
         connectToMQTT(); 
     } else {
-        // បើខុស៖ បង្ហាញអក្សរប្រកាសអាសន្នពណ៌ក្រហម
-        if (errorMsg) {
-            errorMsg.style.display = 'block';
-        }
+        if (errorMsg) errorMsg.style.display = 'block';
     }
 }
 
-// ================= ១. មុខងារបង្កើតប្រវត្តិជាអក្សរ (History Log Function) =================
+// ================= ១. មុខងារបង្កើតប្រវត្តិជាអក្សរ =================
 function addLog(actionText, color = '#333') {
     const logContainer = document.getElementById('historyLog');
     if (!logContainer) return;
@@ -89,12 +79,10 @@ function connectToMQTT() {
         const message = payload.toString().trim();
         console.log(`Received [${topic}]: ${message}`);
 
-        // 🛠️ ឡែកផ្នែកបង្ហាញវ៉ុល AC (ប្រសិនបើក្នុង HTML របស់បងមាន ID ផ្សេងគ្នា ដូចជា 'volt_ac')
         if (topic === "irrigation/voltage_ac") {
             const element = document.getElementById('volt_ac') || document.getElementById('volt'); 
             if(element) element.innerText = message + " V";
         }
-        // 🛠️ ឡែកផ្នែកបង្ហាញវ៉ុល DC
         if (topic === "irrigation/voltage_dc") {
             const element = document.getElementById('volt_dc'); 
             if(element) element.innerText = message + " V";
@@ -127,45 +115,42 @@ function connectToMQTT() {
 
         if (topic === "irrigation/mode") {
             if (message !== lastModeState) {
+                lastModeState = message; // Update ស្ថានភាពចាស់ភ្លាម ការពារការដេញ Log ចម្លង
                 if (message === "AUTO") {
                     addLog("System Mode set to 🔵 AUTOMATIC", "#2980b9");
                 } else if (message === "MANUAL") {
                     addLog("System Mode set to 🟠 MANUAL", "#d35400");
                 }
-                lastModeState = message;
             }
         }
     });
 }
 
-// ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard (🛠️ កែសម្រួល Topics ឱ្យត្រូវនឹង ESP32 ថ្មី) =================
+// ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard =================
 function pumpOn() {
     if (client && client.connected) {
-        client.publish("irrigation/pump", "ON"); // 🛠️ ប្តូរពី esp32/pump -> irrigation/pump
+        client.publish("irrigation/pump", "ON"); 
         addLog("User clicked [START] button from Web Dashboard.", "#27ae60");
     }
 }
 
-// មុខងារ STOP
 function pumpOff() {
     if (client && client.connected) {
-        client.publish("irrigation/pump", "OFF"); // 🛠️ ប្តូរពី esp32/pump -> irrigation/pump
+        client.publish("irrigation/pump", "OFF"); 
         addLog("User clicked [STOP] button from Web Dashboard.", "#c0392b");
     }
 }
 
-// មុខងារ AUTO
 function autoMode() {
     if (client && client.connected) {
-        client.publish("irrigation/mode", "AUTO"); // 🛠️ ប្តូរពី esp32/mode -> irrigation/mode
+        client.publish("irrigation/mode", "AUTO"); 
         addLog("User clicked [AUTO] mode from Web Dashboard.", "#2980b9");
     }
 }
 
-// មុខងារ MANUAL
 function manualMode() {
     if (client && client.connected) {
-        client.publish("irrigation/mode", "MANUAL"); // 🛠️ ប្តូរពី esp32/mode -> irrigation/mode
+        client.publish("irrigation/mode", "MANUAL"); 
         addLog("User clicked [MANUAL] mode from Web Dashboard.", "#d35400");
     }
 }
