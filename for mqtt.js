@@ -3,14 +3,18 @@ let client;
 let lastPumpState = "";
 let lastModeState = "";
 
-// ================= ០. មុខងារត្រួតពិនិត្យការ Login =================
+// ================= ០. មុខងារត្រួតពិនិត្យការ Login (កំណែទម្រង់ការពារ Bug អក្សរ) =================
 function checkPassword() {
-    const passwordEntered = document.getElementById('passwordInput').value;
-    const correctPassword = "​​29072003"; // Password សម្រាប់ចូលប្រព័ន្ធ
+    // ចាប់យកតម្លៃពីប្រអប់បញ្ចូល ហើយបំប្លែងវាទៅជាអក្សរធម្មតា និងលុបចន្លោះទំនេរចេញទាំងស្រុង
+    const passwordEntered = document.getElementById('passwordInput').value.trim();
+    
+    // 🔐 កំណត់លេខសម្ងាត់ថ្មី (សរសេរជាលេខសុទ្ធ ដើម្បីការពារ Bug អក្សរលាក់ភ្នែក)
+    const correctPassword = "29072003"; 
+
     const errorMsg = document.getElementById('errorMessage');
 
     if (passwordEntered === correctPassword) {
-        // បើត្រូវ៖ លាក់ផ្ទាំង Login រួចបង្ហាញផ្ទាំង Dashboard ភ្លាម
+        // បើត្រូវ៖ លាក់ផ្ទាំង Login រួចបង្ហាញផ្ទាំង Dashboard
         document.getElementById('loginContainer').style.display = 'none';
         document.getElementById('dashboardContainer').style.display = 'block';
         
@@ -18,7 +22,9 @@ function checkPassword() {
         connectToMQTT(); 
     } else {
         // បើខុស៖ បង្ហាញអក្សរប្រកាសអាសន្នពណ៌ក្រហម
-        if (errorMsg) errorMsg.style.display = 'block';
+        if (errorMsg) {
+            errorMsg.style.display = 'block';
+        }
     }
 }
 
