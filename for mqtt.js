@@ -66,6 +66,8 @@ function connectToMQTT() {
         console.log('Connected to EMQX Successfully!');
         client.subscribe("irrigation/voltage_ac");
         client.subscribe("irrigation/voltage_dc");
+        client.subscribe("irrigation/current_ac"); // 🛠️ បន្ថែមស្ដាប់ទិន្នន័យ AC Current
+        client.subscribe("irrigation/current_dc"); // 🛠️ បន្ថែមស្ដាប់ទិន្នន័យ DC Current
         client.subscribe("irrigation/tank");
         client.subscribe("irrigation/flow");
         client.subscribe("irrigation/pump");
@@ -86,6 +88,16 @@ function connectToMQTT() {
         if (topic === "irrigation/voltage_dc") {
             const element = document.getElementById('volt_dc'); 
             if(element) element.innerText = message + " V";
+        }
+        // 🛠️ ចាប់តម្លៃ AC Current (IAC) មកបង្ហាញលើ Web
+        if (topic === "irrigation/current_ac") {
+            const element = document.getElementById('current_ac'); 
+            if(element) element.innerText = message + " A";
+        }
+        // 🛠️ ចាប់តម្លៃ DC Current (IDC) មកបង្ហាញលើ Web
+        if (topic === "irrigation/current_dc") {
+            const element = document.getElementById('current_dc'); 
+            if(element) element.innerText = message + " A";
         }
         if (topic === "irrigation/tank") {
             const element = document.getElementById('tank'); 
@@ -115,7 +127,7 @@ function connectToMQTT() {
 
         if (topic === "irrigation/mode") {
             if (message !== lastModeState) {
-                lastModeState = message; // Update ស្ថានភាពចាស់ភ្លាម ការពារការដេញ Log ចម្លង
+                lastModeState = message; 
                 if (message === "AUTO") {
                     addLog("System Mode set to 🔵 AUTOMATIC", "#2980b9");
                 } else if (message === "MANUAL") {
