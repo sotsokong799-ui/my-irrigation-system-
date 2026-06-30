@@ -48,8 +48,8 @@ function addLog(actionText, color = '#333') {
 
 // ================= ២. ការភ្ជាប់ទៅ HiveMQ Cloud (Free Forever) =================
 const options = {
-  username: 'YOUR_HIVEMQ_USERNAME',     // ⚠️ ប្តូរដាក់ Username ដែលបងទើបបង្កើតមិញនេះ
-  password: 'YOUR_HIVEMQ_PASSWORD',     // ⚠️ ប្តូរដាក់ Password ដែលបងទើបបង្កើតមិញនេះ
+  username: 'MyMQTT',     // ⚠️ ប្តូរដាក់ Username ដែលបងទើបបង្កើតមិញនេះ
+  password: '29072003Sot',     // ⚠️ ប្តូរដាក់ Password ដែលបងទើបបង្កើតមិញនេះ
   keepalive: 60,
   clientId: 'web_dashboard_' + Math.random().toString(16).substr(2, 8),
   protocolId: 'MQTT',
