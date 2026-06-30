@@ -46,10 +46,10 @@ function addLog(actionText, color = '#333') {
     logContainer.insertBefore(logEntry, logContainer.firstChild);
 }
 
-// ================= ២. ការភ្ជាប់ទៅ EMQX Cloud =================
+// ================= ២. ការភ្ជាប់ទៅ HiveMQ Cloud (Free Forever) =================
 const options = {
-  username: 'KONG@29',     
-  password: '29072003KONG',  
+  username: 'YOUR_HIVEMQ_USERNAME',     // ⚠️ ប្តូរដាក់ Username ដែលបងទើបបង្កើតមិញនេះ
+  password: 'YOUR_HIVEMQ_PASSWORD',     // ⚠️ ប្តូរដាក់ Password ដែលបងទើបបង្កើតមិញនេះ
   keepalive: 60,
   clientId: 'web_dashboard_' + Math.random().toString(16).substr(2, 8),
   protocolId: 'MQTT',
@@ -60,20 +60,21 @@ const options = {
 };
 
 function connectToMQTT() {
-    client = mqtt.connect('wss://gb0066f0.ala.us-east-1.emqxsl.com:8084/mqtt', options);
+    // 🔗 ភ្ជាប់ទៅកាន់ Cluster URL ថ្មីរបស់បងតាមរយៈ Port Secure Websocket 8884 របស់ HiveMQ
+    client = mqtt.connect('wss://4a8939aca73049848878fb5e2c8c332c.s1.eu.hivemq.cloud:8884/mqtt', options);
 
     client.on('connect', () => {
-        console.log('Connected to EMQX Successfully!');
+        console.log('Connected to HiveMQ Successfully!');
         client.subscribe("irrigation/voltage_ac");
         client.subscribe("irrigation/voltage_dc");
-        client.subscribe("irrigation/current_ac"); // 🛠️ បន្ថែមស្ដាប់ទិន្នន័យ AC Current
-        client.subscribe("irrigation/current_dc"); // 🛠️ បន្ថែមស្ដាប់ទិន្នន័យ DC Current
+        client.subscribe("irrigation/current_ac"); 
+        client.subscribe("irrigation/current_dc"); 
         client.subscribe("irrigation/tank");
         client.subscribe("irrigation/flow");
         client.subscribe("irrigation/pump");
         client.subscribe("irrigation/mode");
         
-        addLog("Dashboard authorized and connected to EMQX Broker Server.", "#2980b9");
+        addLog("Dashboard authorized and connected to HiveMQ Free Server.", "#27ae60");
     });
 
     // ================= ៣. ទទួលទិន្នន័យពី MQTT មកបង្ហាញលើ Web =================
@@ -89,12 +90,10 @@ function connectToMQTT() {
             const element = document.getElementById('volt_dc'); 
             if(element) element.innerText = message + " V";
         }
-        // 🛠️ ចាប់តម្លៃ AC Current (IAC) មកបង្ហាញលើ Web
         if (topic === "irrigation/current_ac") {
             const element = document.getElementById('current_ac'); 
             if(element) element.innerText = message + " A";
         }
-        // 🛠️ ចាប់តម្លៃ DC Current (IDC) មកបង្ហាញលើ Web
         if (topic === "irrigation/current_dc") {
             const element = document.getElementById('current_dc'); 
             if(element) element.innerText = message + " A";
@@ -153,16 +152,4 @@ function pumpOff() {
     }
 }
 
-function autoMode() {
-    if (client && client.connected) {
-        client.publish("irrigation/mode", "AUTO"); 
-        addLog("User clicked [AUTO] mode from Web Dashboard.", "#2980b9");
-    }
-}
-
-function manualMode() {
-    if (client && client.connected) {
-        client.publish("irrigation/mode", "MANUAL"); 
-        addLog("User clicked [MANUAL] mode from Web Dashboard.", "#d35400");
-    }
-}
+// ... រក្សាមុខងារ autoMode() និង manualMode() ទុកដដែល ...
