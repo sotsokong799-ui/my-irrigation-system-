@@ -9,6 +9,8 @@ function checkPassword() {
     const correctPassword = "29072003"; 
     const errorMsg = document.getElementById('errorMessage');
 
+    console.log("Attempting login...");
+
     if (passwordEntered === correctPassword) {
         document.getElementById('loginContainer').style.display = 'none';
         document.getElementById('dashboardContainer').style.display = 'block';
@@ -46,7 +48,7 @@ function addLog(actionText, color = '#333') {
     logContainer.insertBefore(logEntry, logContainer.firstChild);
 }
 
-// ================= ២. ការភ្ជាប់ទៅ HiveMQ Cloud =================
+// ================= ②. ការភ្ជាប់ទៅ HiveMQ Cloud =================
 const options = {
   username: 'MyMQTT',     
   password: '29072003Sot',     
@@ -60,7 +62,6 @@ const options = {
 };
 
 function connectToMQTT() {
-    // 🔗 ភ្ជាប់ទៅកាន់ Cluster URL ថ្មីរបស់បងតាមរយៈ Port Secure Websocket 8884 របស់ HiveMQ
     client = mqtt.connect('wss://4a8939aca73049848878fb5e2c8c332c.s1.eu.hivemq.cloud:8884/mqtt', options);
 
     client.on('connect', () => {
@@ -86,8 +87,6 @@ function connectToMQTT() {
             const element = document.getElementById('volt'); 
             if(element) element.innerText = message + " V";
         }
-        
-        // 🟢 កែសម្រួលអត្តសញ្ញាណ (ID) ឱ្យត្រូវជាមួយ HTML របស់បង
         if (topic === "irrigation/voltage_dc") {
             const element = document.getElementById('dc-voltage-value'); 
             if(element) element.innerText = message;
@@ -100,7 +99,6 @@ function connectToMQTT() {
             const element = document.getElementById('dc-current'); 
             if(element) element.innerText = message + " A";
         }
-        
         if (topic === "irrigation/tank") {
             const element = document.getElementById('tank'); 
             if(element) element.innerText = message;
