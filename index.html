@@ -3,70 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT Irrigation System - Login</title>
-    <link rel="stylesheet" href="style.css">
+    <title>IoT Irrigation System - Dashboard</title>
+    <link rel="stylesheet" href="style.css?v=1.2">
     
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body style="background-color: #f4f6f9; margin: 0; padding: 0;">
 
-    <div id="loginContainer" style="max-width: 400px; margin: 100px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); text-align: center;">
+    <div id="loginContainer" style="display: none; max-width: 400px; margin: 100px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); text-align: center;">
         <h2 style="color: #2ecc71; margin-bottom: 10px;">🌱 System Login</h2>
-        <p style="color: #7f8c8d; font-size: 14px; margin-bottom: 20px;">Please enter password to access dashboard.</p>
-        
-        <input type="password" id="passwordInput" placeholder="Enter Password" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box;">
-        
-        <button onclick="checkPassword()" style="width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold;">LOGIN</button>
-        
-        <p id="errorMessage" style="color: red; margin-top: 10px; font-size: 14px; display: none;">❌ Incorrect Password! Try again.</p>
+        <input type="password" id="passwordInput" value="29072003">
+        <button onclick="checkPassword()">LOGIN</button>
     </div>
 
-    <div id="dashboardContainer" style="display: none;">
+    <div id="dashboardContainer" style="display: block;">
         
-        <div class="header">
-            <h1>🌱 IoT Irrigation Dashboard</h1>
+        <div class="header" style="text-align: center; padding: 20px; background: #2ecc71; color: white; margin-bottom: 20px;">
+            <h1 style="margin: 0;">🌱 IoT Irrigation Dashboard</h1>
         </div>
 
-        <div class="grid">
-            <div class="card">
+        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 20px; max-width: 1200px; margin: 0 auto;">
+            <div class="card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;">
                 <h3>AC Current</h3>
-                <p id="ac-current">0.00 A</p>
+                <p id="ac-current" style="font-size: 24px; font-weight: bold; color: #2c3e50;">0.00 A</p>
             </div>
-            <div class="card">
+            <div class="card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;">
                 <h3>DC Current</h3>
-                <p id="dc-current">0.00 A</p>
+                <p id="dc-current" style="font-size: 24px; font-weight: bold; color: #2c3e50;">0.00 A</p>
             </div>
-            <div class="card">
+            <div class="card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;">
                 <h3>DC Voltage</h3>
-                <p><span id="dc-voltage-value">0.0</span> V</p>
+                <p style="font-size: 24px; font-weight: bold; color: #2c3e50;"><span id="dc-voltage-value">0.0</span> V</p>
             </div>
-            <div class="card">
+            <div class="card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;">
                 <h3>AC Voltage</h3> 
-                <h1 id="volt">0.0 V</h1> 
+                <h1 id="volt" style="font-size: 28px; color: #e74c3c; margin: 10px 0;">0.0 V</h1> 
             </div>
-            <div class="card">
+            <div class="card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;">
                 <h3>Tank Level</h3>
-                <h1 id="tank">---</h1>
+                <h1 id="tank" style="font-size: 28px; color: #3498db; margin: 10px 0;">---</h1>
             </div>
-            <div class="card">
+            <div class="card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;">
                 <h3>Water Flow</h3>
-                <h1 id="flow">0.0 L/min</h1>
+                <h1 id="flow" style="font-size: 28px; color: #16a085; margin: 10px 0;">0.0 L/min</h1>
             </div>
-            <div class="card">
+            <div class="card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;">
                 <h3>Pump Status</h3>
-                <h1 id="pump">OFF</h1>
+                <h1 id="pump" style="font-size: 28px; color: #7f8c8d; margin: 10px 0;">OFF</h1>
             </div>
-            <div class="card" style="border-left: 5px solid #2980b9;">
+            <div class="card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; border-left: 5px solid #2980b9;">
                 <h3>System Mode</h3>
-                <h1 id="mode" style="color: #d35400;">MANUAL</h1>
+                <h1 id="mode" style="font-size: 28px; color: #d35400; margin: 10px 0;">MANUAL</h1>
             </div>
         </div>
 
-        <div class="buttons">
-            <button class="green" onclick="pumpOn()">START</button>
-            <button class="red" onclick="pumpOff()">STOP</button> 
-            <button class="blue" id="btn-auto" onclick="autoMode()">AUTO</button> 
-            <button class="orange" id="btn-manual" onclick="manualMode()">MANUAL</button> 
+        <div class="buttons" style="text-align: center; margin: 30px 0;">
+            <button onclick="pumpOn()" style="padding: 12px 25px; font-size: 16px; margin: 5px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">START</button>
+            <button onclick="pumpOff()" style="padding: 12px 25px; font-size: 16px; margin: 5px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">STOP</button> 
+            <button onclick="autoMode()" style="padding: 12px 25px; font-size: 16px; margin: 5px; background: #2980b9; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">AUTO</button> 
+            <button onclick="manualMode()" style="padding: 12px 25px; font-size: 16px; margin: 5px; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">MANUAL</button> 
         </div>
 
         <div class="chartbox" style="max-width: 900px; margin: 30px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
@@ -80,27 +75,22 @@
     </div>
 
     <script>
-        // អថេរសម្រាប់ប្រើជាសកល
         let client;
         let lastPumpState = "";
         let lastModeState = "";
 
-        // មុខងារត្រួតពិនិត្យការ Login
-        function checkPassword() {
-            const passwordEntered = document.getElementById('passwordInput').value.trim();
-            const correctPassword = "29072003"; 
-            const errorMsg = document.getElementById('errorMessage');
+        // 🟢 កែសម្រួល៖ ឱ្យវារត់ភ្ជាប់ទៅកាន់ MQTT ភ្លាមៗនៅពេលដែលបើកទំព័រ Web ឡើងមក
+        window.onload = function() {
+            console.log("Web page loaded. Connecting to MQTT automatically...");
+            connectToMQTT();
+        };
 
-            if (passwordEntered === correctPassword) {
-                document.getElementById('loginContainer').style.display = 'none';
-                document.getElementById('dashboardContainer').style.display = 'block';
-                connectToMQTT(); 
-            } else {
-                if (errorMsg) errorMsg.style.display = 'block';
-            }
+        function checkPassword() {
+            // រក្សាទុកមុខងារចាស់ការពារក្រែងលោបងចង់ប្រើវិញថ្ងៃក្រោយ
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('dashboardContainer').style.display = 'block';
         }
 
-        // មុខងារបង្កើតប្រវត្តិជាអក្សរ
         function addLog(actionText, color = '#333') {
             const logContainer = document.getElementById('historyLog');
             if (!logContainer) return;
@@ -128,7 +118,6 @@
             logContainer.insertBefore(logEntry, logContainer.firstChild);
         }
 
-        // ការភ្ជាប់ទៅ HiveMQ Cloud
         const options = {
           username: 'MyMQTT',     
           password: '29072003Sot',     
@@ -158,7 +147,6 @@
                 addLog("Dashboard authorized and connected to HiveMQ Free Server.", "#27ae60");
             });
 
-            // ទទួលទិន្នន័យពី MQTT មកបង្ហាញលើ Web
             client.on('message', (topic, payload) => {
                 const message = payload.toString().trim();
                 console.log(`Received [${topic}]: ${message}`);
@@ -224,7 +212,6 @@
             });
         }
 
-        // មុខងារបញ្ជាប៊ូតុង
         function pumpOn() {
             if (client && client.connected) {
                 client.publish("irrigation/pump", "ON"); 
@@ -246,7 +233,6 @@
             }
         }
 
-        // កែពាក្យ void ចេញរួចរាល់
         function manualMode() {
             if (client && client.connected) {
                 client.publish("irrigation/mode", "MANUAL"); 
