@@ -3,20 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT Irrigation System - Dashboard</title>
-    <link rel="stylesheet" href="style.css?v=1.2">
+    <title>IoT Irrigation System - Login</title>
+    <link rel="stylesheet" href="style.css?v=1.4">
     
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body style="background-color: #f4f6f9; margin: 0; padding: 0;">
 
-    <div id="loginContainer" style="display: none; max-width: 400px; margin: 100px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); text-align: center;">
+    <div id="loginContainer" style="max-width: 400px; margin: 100px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); text-align: center;">
         <h2 style="color: #2ecc71; margin-bottom: 10px;">🌱 System Login</h2>
-        <input type="password" id="passwordInput" value="29072003">
-        <button onclick="checkPassword()">LOGIN</button>
+        <p style="color: #7f8c8d; font-size: 14px; margin-bottom: 20px;">Please enter password to access dashboard.</p>
+        
+        <input type="password" id="passwordInput" placeholder="Enter Password" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box;">
+        
+        <button id="loginBtn" style="width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold;">LOGIN</button>
+        
+        <p id="errorMessage" style="color: red; margin-top: 10px; font-size: 14px; display: none;">❌ Incorrect Password! Try again.</p>
     </div>
 
-    <div id="dashboardContainer" style="display: block;">
+    <div id="dashboardContainer" style="display: none;">
         
         <div class="header" style="text-align: center; padding: 20px; background: #2ecc71; color: white; margin-bottom: 20px;">
             <h1 style="margin: 0;">🌱 IoT Irrigation Dashboard</h1>
@@ -79,16 +84,27 @@
         let lastPumpState = "";
         let lastModeState = "";
 
-        // 🟢 កែសម្រួល៖ ឱ្យវារត់ភ្ជាប់ទៅកាន់ MQTT ភ្លាមៗនៅពេលដែលបើកទំព័រ Web ឡើងមក
-        window.onload = function() {
-            console.log("Web page loaded. Connecting to MQTT automatically...");
-            connectToMQTT();
-        };
+        // រង់ចាំឱ្យ Web ទាញយកទិន្នន័យចប់សព្វគ្រប់ ទើបឱ្យប៊ូតុង Login ដំណើរការ (ការពារការគាំង)
+        document.addEventListener("DOMContentLoaded", function() {
+            const loginBtn = document.getElementById('loginBtn');
+            if(loginBtn) {
+                loginBtn.addEventListener('click', checkPassword);
+            }
+        });
 
+        // មុខងារត្រួតពិនិត្យការ Login
         function checkPassword() {
-            // រក្សាទុកមុខងារចាស់ការពារក្រែងលោបងចង់ប្រើវិញថ្ងៃក្រោយ
-            document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('dashboardContainer').style.display = 'block';
+            const passwordEntered = document.getElementById('passwordInput').value.trim();
+            const correctPassword = "29072003"; 
+            const errorMsg = document.getElementById('errorMessage');
+
+            if (passwordEntered === correctPassword) {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('dashboardContainer').style.display = 'block';
+                connectToMQTT(); // ភ្ជាប់ទៅ MQTT តែពេលវាយលេខសម្ងាត់ត្រូវប៉ុណ្ណោះ
+            } else {
+                if (errorMsg) errorMsg.style.display = 'block';
+            }
         }
 
         function addLog(actionText, color = '#333') {
