@@ -1,83 +1,4 @@
-// អថេរសម្រាប់ប្រើជាសកល (Global Variables)
-let client;
-let lastPumpState = "";
-let lastModeState = "";
-
-// ================= ០. មុខងារត្រួតពិនិត្យការ Login =================
-function checkPassword() {
-    const passwordEntered = document.getElementById('passwordInput').value.trim();
-    const correctPassword = "29072003"; 
-    const errorMsg = document.getElementById('errorMessage');
-
-    if (passwordEntered === correctPassword) {
-        document.getElementById('loginContainer').style.display = 'none';
-        document.getElementById('dashboardContainer').style.display = 'block';
-        connectToMQTT(); 
-    } else {
-        if (errorMsg) errorMsg.style.display = 'block';
-    }
-}
-
-// ================= ១. មុខងារបង្កើតប្រវត្តិជាអក្សរ =================
-function addLog(actionText, color = '#333') {
-    const logContainer = document.getElementById('historyLog');
-    if (!logContainer) return;
-
-    if (logContainer.innerHTML.includes("No activity recorded yet.")) {
-        logContainer.innerHTML = "";
-    }
-
-    const now = new Date();
-    const day = now.getDate().toString().padStart(2, '0');
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const year = now.getFullYear();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
-
-    const dateTimeString = `[${day}/${month}/${year} - ${hours}:${minutes}:${seconds}]`;
-
-    const logEntry = document.createElement('div');
-    logEntry.style.marginBottom = '8px';
-    logEntry.style.borderBottom = '1px dashed #eee';
-    logEntry.style.paddingBottom = '4px';
-    logEntry.innerHTML = `<span style="color: #7f8c8d; font-weight: bold;">${dateTimeString}</span> ➡️ <span style="color: ${color}; font-weight: 500;">${actionText}</span>`;
-
-    logContainer.insertBefore(logEntry, logContainer.firstChild);
-}
-
-// ================= ២. ការភ្ជាប់ទៅ HiveMQ Cloud =================
-const options = {
-  username: 'MyMQTT',     
-  password: '29072003Sot',     
-  keepalive: 60,
-  clientId: 'web_dashboard_' + Math.random().toString(16).substr(2, 8),
-  protocolId: 'MQTT',
-  protocolVersion: 4,
-  clean: true,
-  reconnectPeriod: 1000,
-  connectTimeout: 30 * 1000
-};
-
-function connectToMQTT() {
-    // 🔗 ភ្ជាប់ទៅកាន់ Cluster URL ថ្មីរបស់បងតាមរយៈ Port Secure Websocket 8884 របស់ HiveMQ
-    client = mqtt.connect('wss://4a8939aca73049848878fb5e2c8c332c.s1.eu.hivemq.cloud:8884/mqtt', options);
-
-    client.on('connect', () => {
-        console.log('Connected to HiveMQ Successfully!');
-        client.subscribe("irrigation/voltage_ac");
-        client.subscribe("irrigation/voltage_dc");
-        client.subscribe("irrigation/current_ac"); 
-        client.subscribe("irrigation/current_dc"); 
-        client.subscribe("irrigation/tank");
-        client.subscribe("irrigation/flow");
-        client.subscribe("irrigation/pump");
-        client.subscribe("irrigation/mode");
-        
-        addLog("Dashboard authorized and connected to HiveMQ Free Server.", "#27ae60");
-    });
-
-    // ================= ៣. ទទួលទិន្នន័យពី MQTT មកបង្ហាញលើ Web =================
+// ================= ៣. ទទួលទិន្នន័យពី MQTT មកបង្ហាញលើ Web =================
     client.on('message', (topic, payload) => {
         const message = payload.toString().trim();
         console.log(`Received [${topic}]: ${message}`);
@@ -86,8 +7,6 @@ function connectToMQTT() {
             const element = document.getElementById('volt'); 
             if(element) element.innerText = message + " V";
         }
-        
-        // 🟢 កែសម្រួលអត្តសញ្ញាណ (ID) ឱ្យត្រូវជាមួយ HTML របស់បង
         if (topic === "irrigation/voltage_dc") {
             const element = document.getElementById('dc-voltage-value'); 
             if(element) element.innerText = message;
@@ -100,7 +19,6 @@ function connectToMQTT() {
             const element = document.getElementById('dc-current'); 
             if(element) element.innerText = message + " A";
         }
-        
         if (topic === "irrigation/tank") {
             const element = document.getElementById('tank'); 
             if(element) element.innerText = message;
@@ -143,8 +61,7 @@ function connectToMQTT() {
                 }
             }
         }
-    });
-}
+    }); // 🟢 បិទត្រឹមត្រូវ (លែងមានសញ្ញាលើសរញ៉េរញ៉េទៀតហើយ)
 
 // ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard =================
 function pumpOn() {
@@ -154,6 +71,7 @@ function pumpOn() {
     }
 }
 
+// មុខងារ STOP ម៉ូទ័រ
 function pumpOff() {
     if (client && client.connected) {
         client.publish("irrigation/pump", "OFF"); 
@@ -161,7 +79,8 @@ function pumpOff() {
     }
 }
 
-function autoMode() {
+// មុខងារប្តូរទៅ AUTO Mode
+void function autoMode() {
     if (client && client.connected) {
         client.publish("irrigation/mode", "AUTO"); 
         addLog("User switched system to 🔵 AUTOMATIC Mode via Phone.", "#2980b9");
@@ -170,7 +89,8 @@ function autoMode() {
     }
 }
 
-function manualMode() {
+// មុខងារប្តូរទៅ MANUAL Mode
+void function manualMode() {
     if (client && client.connected) {
         client.publish("irrigation/mode", "MANUAL"); 
         addLog("User switched system to 🟠 MANUAL Mode via Phone.", "#d35400");
