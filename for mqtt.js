@@ -152,7 +152,7 @@ function pumpOn() {
         // ផ្ញើទាំង Command ON និងប្តូរ Mode ទៅ MANUAL
         client.publish("irrigation/pump", "ON", { retain: true }); 
         client.publish("irrigation/mode", "MANUAL", { retain: true }); 
-        addLog("User clicked [START] button from Web Dashboard.", "#27ae60");
+        addLog("User clicked [START] button from Web Dashboard.", "#c0392b");
     }
 }
 
@@ -161,7 +161,7 @@ function pumpOff() {
         // ផ្ញើទាំង Command OFF និងប្តូរ Mode ទៅ MANUAL
         client.publish("irrigation/pump", "OFF", { retain: true }); 
         client.publish("irrigation/mode", "MANUAL", { retain: true }); 
-        addLog("User clicked [STOP] button from Web Dashboard.", "#c0392b");
+        addLog("User clicked [STOP] button from Web Dashboard.", "#27ae60");
     }
 }
 
