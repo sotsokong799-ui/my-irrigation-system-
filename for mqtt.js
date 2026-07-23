@@ -103,23 +103,25 @@ function connectToMQTT() {
             const element = document.getElementById('tank'); 
             if(element) element.innerText = message;
         }
+        
+        // 🎯 កែសម្រួលខ្នាតជា m³ ឱ្យត្រូវជាមួយ ESP32
         if (topic === "irrigation/flow") {
             const element = document.getElementById('flow'); 
-            if(element) element.innerText = message + " L/min";
+            if(element) element.innerText = message + " m³";
         }
         
         if (topic === "irrigation/pump") {
             const element = document.getElementById('pump'); 
             if(element) {
                 element.innerText = message;
-                element.style.color = (message === "ON") ? "green" : "red";
+                element.style.color = (message === "ON") ? "#2ecc71" : "#e74c3c";
             }
             
             if (message !== lastPumpState) {
                 if (message === "ON") {
-                    addLog("Motor Status changed to 🟢 ON", "green");
+                    addLog("Motor Status changed to 🟢 ON", "#2ecc71");
                 } else if (message === "OFF") {
-                    addLog("Motor Status changed to 🔴 OFF", "red");
+                    addLog("Motor Status changed to 🔴 OFF", "#e74c3c");
                 }
                 lastPumpState = message;
             }
@@ -144,25 +146,29 @@ function connectToMQTT() {
     });
 }
 
-// ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard =================
+// ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard (កែសម្រួលរួច) =================
 function pumpOn() {
     if (client && client.connected) {
-        client.publish("irrigation/pump", "ON"); 
+        // ផ្ញើទាំង Command ON និងប្តូរ Mode ទៅ MANUAL
+        client.publish("irrigation/pump", "ON", { retain: true }); 
+        client.publish("irrigation/mode", "MANUAL", { retain: true }); 
         addLog("User clicked [START] button from Web Dashboard.", "#27ae60");
     }
 }
 
 function pumpOff() {
     if (client && client.connected) {
-        client.publish("irrigation/pump", "OFF"); 
+        // ផ្ញើទាំង Command OFF និងប្តូរ Mode ទៅ MANUAL
+        client.publish("irrigation/pump", "OFF", { retain: true }); 
+        client.publish("irrigation/mode", "MANUAL", { retain: true }); 
         addLog("User clicked [STOP] button from Web Dashboard.", "#c0392b");
     }
 }
 
 function autoMode() {
     if (client && client.connected) {
-        client.publish("irrigation/mode", "AUTO"); 
-        addLog("User switched system to 🔵 AUTOMATIC Mode via Phone.", "#2980b9");
+        client.publish("irrigation/mode", "AUTO", { retain: true }); 
+        addLog("User switched system to 🔵 AUTOMATIC Mode.", "#2980b9");
     } else {
         console.log("MQTT Client disconnected. Cannot change mode.");
     }
@@ -170,8 +176,8 @@ function autoMode() {
 
 function manualMode() {
     if (client && client.connected) {
-        client.publish("irrigation/mode", "MANUAL"); 
-        addLog("User switched system to 🟠 MANUAL Mode via Phone.", "#d35400");
+        client.publish("irrigation/mode", "MANUAL", { retain: true }); 
+        addLog("User switched system to 🟠 MANUAL Mode.", "#d35400");
     } else {
         console.log("MQTT Client disconnected. Cannot change mode.");
     }
