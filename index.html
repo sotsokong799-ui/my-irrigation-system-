@@ -225,21 +225,21 @@
             });
         }
 
-        // 🟢 មុខងារចុច START
+        // 🔴 មុខងារចុច STOP
         function pumpOn() {
             if (client && client.connected) {
                 client.publish("irrigation/pump", "ON", { retain: true }); 
                 client.publish("irrigation/mode", "MANUAL", { retain: true }); // ប្តូរទៅ MANUAL ស្វ័យប្រវត្តិ
-                addLog("User clicked [START] from Web Dashboard.", "#2ecc71");
+                addLog("User clicked [STOP] from Web Dashboard.", "#2ecc71");
             }
         }
 
-        // 🔴 មុខងារចុច STOP
+        // 🟢 មុខងារចុច START
         function pumpOff() {
             if (client && client.connected) {
                 client.publish("irrigation/pump", "OFF", { retain: true }); 
                 client.publish("irrigation/mode", "MANUAL", { retain: true }); // ប្តូរទៅ MANUAL ស្វ័យប្រវត្តិ
-                addLog("User clicked [STOP] from Web Dashboard.", "#e74c3c");
+                addLog("User clicked [START] from Web Dashboard.", "#e74c3c");
             }
         }
 
