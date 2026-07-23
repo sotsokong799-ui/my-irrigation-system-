@@ -48,7 +48,7 @@ function addLog(actionText, color = '#333') {
     logContainer.insertBefore(logEntry, logContainer.firstChild);
 }
 
-// ================= ②. ការភ្ជាប់ទៅ HiveMQ Cloud =================
+// ================= ២. ការភ្ជាប់ទៅ HiveMQ Cloud =================
 const options = {
   username: 'MyMQTT',     
   password: '29072003Sot',     
@@ -104,7 +104,7 @@ function connectToMQTT() {
             if(element) element.innerText = message;
         }
         
-        // 🎯 កែសម្រួលខ្នាតជា m³ ឱ្យត្រូវជាមួយ ESP32
+        // ខ្នាតទឹក m³
         if (topic === "irrigation/flow") {
             const element = document.getElementById('flow'); 
             if(element) element.innerText = message + " m³";
@@ -146,22 +146,22 @@ function connectToMQTT() {
     });
 }
 
-// ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard (កែសម្រួលរួច) =================
+// ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard (កែសម្រួល Logic រួចរាល់) =================
 function pumpOn() {
     if (client && client.connected) {
-        // ផ្ញើទាំង Command ON និងប្តូរ Mode ទៅ MANUAL
-        client.publish("irrigation/pump", "ON", { retain: true }); 
+        // ផ្ញើ "OFF" ដើម្បីតម្រូវតាម Active LOW Logic របស់ ESP32 Relay
+        client.publish("irrigation/pump", "OFF", { retain: true }); 
         client.publish("irrigation/mode", "MANUAL", { retain: true }); 
-        addLog("User clicked [START] button from Web Dashboard.", "#c0392b");
+        addLog("User clicked [START] button from Web Dashboard.", "#27ae60");
     }
 }
 
 function pumpOff() {
     if (client && client.connected) {
-        // ផ្ញើទាំង Command OFF និងប្តូរ Mode ទៅ MANUAL
-        client.publish("irrigation/pump", "OFF", { retain: true }); 
+        // ផ្ញើ "ON" ដើម្បីតម្រូវតាម Active LOW Logic របស់ ESP32 Relay
+        client.publish("irrigation/pump", "ON", { retain: true }); 
         client.publish("irrigation/mode", "MANUAL", { retain: true }); 
-        addLog("User clicked [STOP] button from Web Dashboard.", "#27ae60");
+        addLog("User clicked [STOP] button from Web Dashboard.", "#c0392b");
     }
 }
 
