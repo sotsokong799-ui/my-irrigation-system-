@@ -149,8 +149,8 @@ function connectToMQTT() {
 // ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard =================
 function pumpOn() {
     if (client && client.connected) {
-        // ផ្ញើសារ "OFF" និងបិទ retain flag ដើម្បីឱ្យ ESP32 បើក Relay បានត្រឹមត្រូវ
-        client.publish("irrigation/pump", "OFF", { retain: false }); 
+        // ផ្ញើសារ "ON" និងបិទ retain flag ដើម្បីឱ្យ ESP32 បើក Relay បានត្រឹមត្រូវ
+        client.publish("irrigation/pump", "ON", { retain: false }); 
         client.publish("irrigation/mode", "MANUAL", { retain: false }); 
 
         // បង្ខំបង្ហាញ status លើ Web ឱ្យទៅជា ON ពណ៌បៃតង
@@ -168,8 +168,8 @@ function pumpOn() {
 
 function pumpOff() {
     if (client && client.connected) {
-        // ផ្ញើសារ "ON" និងបិទ retain flag ដើម្បីឱ្យ ESP32 បិទ Relay
-        client.publish("irrigation/pump", "ON", { retain: false }); 
+        // ផ្ញើសារ "OFF" និងបិទ retain flag ដើម្បីឱ្យ ESP32 បិទ Relay
+        client.publish("irrigation/pump", "OFF", { retain: false }); 
         client.publish("irrigation/mode", "MANUAL", { retain: false }); 
 
         // បង្ខំបង្ហាញ status លើ Web ឱ្យទៅជា OFF ពណ៌ក្រហម
