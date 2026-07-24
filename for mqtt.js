@@ -113,32 +113,32 @@ function connectToMQTT() {
         if (topic === "irrigation/pump") {
             const element = document.getElementById('pump'); 
             if(element) {
-                element.innerText = message;
-                element.style.color = (message === "ON") ? "#2ecc71" : "#e74c3c";
+                element.innerText = message.toUpperCase();
+                element.style.color = (message.toUpperCase() === "ON") ? "#2ecc71" : "#e74c3c";
             }
             
-            if (message !== lastPumpState) {
-                if (message === "ON") {
+            if (message.toUpperCase() !== lastPumpState) {
+                if (message.toUpperCase() === "ON") {
                     addLog("Motor Status changed to 🟢 ON", "#2ecc71");
-                } else if (message === "OFF") {
+                } else if (message.toUpperCase() === "OFF") {
                     addLog("Motor Status changed to 🔴 OFF", "#e74c3c");
                 }
-                lastPumpState = message;
+                lastPumpState = message.toUpperCase();
             }
         }
 
         if (topic === "irrigation/mode") {
             const element = document.getElementById('mode'); 
             if (element) {
-                element.innerText = message;
-                element.style.color = (message === "AUTO") ? "#2980b9" : "#d35400";
+                element.innerText = message.toUpperCase();
+                element.style.color = (message.toUpperCase() === "AUTO") ? "#2980b9" : "#d35400";
             }
 
-            if (message !== lastModeState) {
-                lastModeState = message; 
-                if (message === "AUTO") {
+            if (message.toUpperCase() !== lastModeState) {
+                lastModeState = message.toUpperCase(); 
+                if (message.toUpperCase() === "AUTO") {
                     addLog("System Mode set to 🔵 AUTOMATIC", "#2980b9");
-                } else if (message === "MANUAL") {
+                } else if (message.toUpperCase() === "MANUAL") {
                     addLog("System Mode set to 🟠 MANUAL", "#d35400");
                 }
             }
@@ -149,14 +149,14 @@ function connectToMQTT() {
 // ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard =================
 function pumpOn() {
     if (client && client.connected) {
-        // ផ្ញើសារ "On" និងបិទ retain flag ដើម្បីឱ្យ ESP32 បើក Relay បានត្រឹមត្រូវ
-        client.publish("irrigation/pump", "On", { retain: false }); 
+        // ផ្ញើសារ "ON" (អក្សរធំ) ទៅកាន់ ESP32
+        client.publish("irrigation/pump", "ON", { retain: false }); 
         client.publish("irrigation/mode", "MANUAL", { retain: false }); 
 
-        // បង្ខំបង្ហាញ status លើ Web ឱ្យទៅជា ON ពណ៌បៃតង
+        // បង្ហាញ status លើ Web ឱ្យទៅជា ON ពណ៌បៃតង
         const element = document.getElementById('pump'); 
         if(element) {
-            element.innerText = "Off";
+            element.innerText = "ON";
             element.style.color = "#2ecc71";
         }
 
@@ -168,14 +168,14 @@ function pumpOn() {
 
 function pumpOff() {
     if (client && client.connected) {
-        // ផ្ញើសារ "Off" និងបិទ retain flag ដើម្បីឱ្យ ESP32 បិទ Relay
-        client.publish("irrigation/pump", "Off", { retain: false }); 
+        // ផ្ញើសារ "OFF" (អក្សរធំ) ទៅកាន់ ESP32
+        client.publish("irrigation/pump", "OFF", { retain: false }); 
         client.publish("irrigation/mode", "MANUAL", { retain: false }); 
 
-        // បង្ខំបង្ហាញ status លើ Web ឱ្យទៅជា OFF ពណ៌ក្រហម
+        // បង្ហាញ status លើ Web ឱ្យទៅជា OFF ពណ៌ក្រហម
         const element = document.getElementById('pump'); 
         if(element) {
-            element.innerText = "On";
+            element.innerText = "OFF";
             element.style.color = "#e74c3c";
         }
 
