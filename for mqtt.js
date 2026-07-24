@@ -20,7 +20,7 @@ function checkPassword() {
     }
 }
 
-// ================= ១. មុខងារបង្កើតប្រវត្តិជាអក្សរ =================
+// ================= ១. មុខងារបង្កើតប្រវត្តិជាអក្សរ (Log History) =================
 function addLog(actionText, color = '#333') {
     const logContainer = document.getElementById('historyLog');
     if (!logContainer) return;
@@ -146,28 +146,48 @@ function connectToMQTT() {
     });
 }
 
-// ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard (កែសម្រួល Logic រួចរាល់) =================
+// ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard =================
 function pumpOn() {
     if (client && client.connected) {
-        // ផ្ញើ "OFF" ដើម្បីតម្រូវតាម Active LOW Logic របស់ ESP32 Relay
-        client.publish("irrigation/pump", "OFF", { retain: true }); 
-        client.publish("irrigation/mode", "MANUAL", { retain: true }); 
+        // ផ្ញើសារ "OFF" និងបិទ retain flag ដើម្បីឱ្យ ESP32 បើក Relay បានត្រឹមត្រូវ
+        client.publish("irrigation/pump", "OFF", { retain: false }); 
+        client.publish("irrigation/mode", "MANUAL", { retain: false }); 
+
+        // បង្ខំបង្ហាញ status លើ Web ឱ្យទៅជា ON ពណ៌បៃតង
+        const element = document.getElementById('pump'); 
+        if(element) {
+            element.innerText = "ON";
+            element.style.color = "#2ecc71";
+        }
+
         addLog("User clicked [START] button from Web Dashboard.", "#27ae60");
+    } else {
+        alert("MQTT Not Connected!");
     }
 }
 
 function pumpOff() {
     if (client && client.connected) {
-        // ផ្ញើ "ON" ដើម្បីតម្រូវតាម Active LOW Logic របស់ ESP32 Relay
-        client.publish("irrigation/pump", "ON", { retain: true }); 
-        client.publish("irrigation/mode", "MANUAL", { retain: true }); 
+        // ផ្ញើសារ "ON" និងបិទ retain flag ដើម្បីឱ្យ ESP32 បិទ Relay
+        client.publish("irrigation/pump", "ON", { retain: false }); 
+        client.publish("irrigation/mode", "MANUAL", { retain: false }); 
+
+        // បង្ខំបង្ហាញ status លើ Web ឱ្យទៅជា OFF ពណ៌ក្រហម
+        const element = document.getElementById('pump'); 
+        if(element) {
+            element.innerText = "OFF";
+            element.style.color = "#e74c3c";
+        }
+
         addLog("User clicked [STOP] button from Web Dashboard.", "#c0392b");
+    } else {
+        alert("MQTT Not Connected!");
     }
 }
 
 function autoMode() {
     if (client && client.connected) {
-        client.publish("irrigation/mode", "AUTO", { retain: true }); 
+        client.publish("irrigation/mode", "AUTO", { retain: false }); 
         addLog("User switched system to 🔵 AUTOMATIC Mode.", "#2980b9");
     } else {
         console.log("MQTT Client disconnected. Cannot change mode.");
@@ -176,7 +196,7 @@ function autoMode() {
 
 function manualMode() {
     if (client && client.connected) {
-        client.publish("irrigation/mode", "MANUAL", { retain: true }); 
+        client.publish("irrigation/mode", "MANUAL", { retain: false }); 
         addLog("User switched system to 🟠 MANUAL Mode.", "#d35400");
     } else {
         console.log("MQTT Client disconnected. Cannot change mode.");
