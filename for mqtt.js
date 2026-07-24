@@ -112,18 +112,24 @@ function connectToMQTT() {
         
         if (topic === "irrigation/pump") {
             const element = document.getElementById('pump'); 
+            
+            // 🎯 បកប្រែ Status សម្រាប់បង្ហាញលើ Web Dashboard ឱ្យត្រូវតាម Hardware
+            // ESP32 បញ្ជូន "OFF" មានន័យថា Pump កំពុង ON
+            // ESP32 បញ្ជូន "ON" មានន័យថា Pump កំពុង OFF
+            let displayStatus = (message.toUpperCase() === "OFF") ? "ON" : "OFF";
+
             if(element) {
-                element.innerText = message.toUpperCase();
-                element.style.color = (message.toUpperCase() === "ON") ? "#2ecc71" : "#e74c3c";
+                element.innerText = displayStatus;
+                element.style.color = (displayStatus === "ON") ? "#2ecc71" : "#e74c3c";
             }
             
-            if (message.toUpperCase() !== lastPumpState) {
-                if (message.toUpperCase() === "ON") {
+            if (displayStatus !== lastPumpState) {
+                if (displayStatus === "ON") {
                     addLog("Motor Status changed to 🟢 ON", "#2ecc71");
-                } else if (message.toUpperCase() === "OFF") {
+                } else {
                     addLog("Motor Status changed to 🔴 OFF", "#e74c3c");
                 }
-                lastPumpState = message.toUpperCase();
+                lastPumpState = displayStatus;
             }
         }
 
@@ -149,8 +155,8 @@ function connectToMQTT() {
 // ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard =================
 function pumpOn() {
     if (client && client.connected) {
-        // ផ្ញើសារ "ON" (អក្សរធំ) ទៅកាន់ ESP32
-        client.publish("irrigation/pump", "ON", { retain: false }); 
+        // 🎯 ផ្ញើសារ "OFF" ទៅកាន់ ESP32 ដើម្បីឱ្យ ESP32 បើក Relay (LOW)
+        client.publish("irrigation/pump", "OFF", { retain: false }); 
         client.publish("irrigation/mode", "MANUAL", { retain: false }); 
 
         // បង្ហាញ status លើ Web ឱ្យទៅជា ON ពណ៌បៃតង
@@ -168,8 +174,8 @@ function pumpOn() {
 
 function pumpOff() {
     if (client && client.connected) {
-        // ផ្ញើសារ "OFF" (អក្សរធំ) ទៅកាន់ ESP32
-        client.publish("irrigation/pump", "OFF", { retain: false }); 
+        // 🎯 ផ្ញើសារ "ON" ទៅកាន់ ESP32 ដើម្បីឱ្យ ESP32 បិទ Relay (HIGH)
+        client.publish("irrigation/pump", "ON", { retain: false }); 
         client.publish("irrigation/mode", "MANUAL", { retain: false }); 
 
         // បង្ហាញ status លើ Web ឱ្យទៅជា OFF ពណ៌ក្រហម
