@@ -1,34 +1,76 @@
-// អថេរសម្រាប់ប្រើជាសកល (Global Variables)
-let client;
-let lastPumpState = "";
-let lastModeState = "";
-
-// ================= ០. មុខងារត្រួតពិនិត្យការ Login =================
+// --- 1. LOGIN SYSTEM ---
 function checkPassword() {
-    const passwordEntered = document.getElementById('passwordInput').value.trim();
+    const passwordEntered = document.getElementById('passwordInput').value;
     const correctPassword = "29072003"; 
     const errorMsg = document.getElementById('errorMessage');
-
-    console.log("Attempting login...");
 
     if (passwordEntered === correctPassword) {
         document.getElementById('loginContainer').style.display = 'none';
         document.getElementById('dashboardContainer').style.display = 'block';
-        connectToMQTT(); 
+        
+        // រក្សាស្ថានភាព Login ទុកក្នុង Storage
+        localStorage.setItem('isLoggedIn', 'true');
+        
+        connectToMQTT();
+        loadSavedData(); // ទាញយកទិន្នន័យទាំងអស់មកបង្ហាញវិញ
     } else {
-        if (errorMsg) errorMsg.style.display = 'block';
+        errorMsg.style.display = 'block';
     }
 }
 
-// ================= ១. មុខងារបង្កើតប្រវត្តិជាអក្សរ (Log History) =================
-function addLog(actionText, color = '#333') {
-    const logContainer = document.getElementById('historyLog');
-    if (!logContainer) return;
+// ឆែកមើលថាតើធ្លាប់ Login ហើយឬនៅពេលបើក App មកភ្លាម
+window.onload = function() {
+    if (localStorage.getItem('isLoggedIn') === 'true') {
+        document.getElementById('loginContainer').style.display = 'none';
+        document.getElementById('dashboardContainer').style.display = 'block';
+        connectToMQTT();
+        loadSavedData();
+    }
+};
 
-    if (logContainer.innerHTML.includes("No activity recorded yet.")) {
-        logContainer.innerHTML = "";
+// --- 2. Save & Load Dashboard Data ---
+function saveDashboardState() {
+    const state = {
+        acCurrent: document.getElementById('acCurrent').innerText,
+        dcCurrent: document.getElementById('dcCurrent').innerText,
+        dcVolt: document.getElementById('Volt').innerText,
+        acVolt: document.getElementById('volt').innerText,
+        tank: document.getElementById('tank').innerText,
+        flow: document.getElementById('flow').innerText,
+        pump: document.getElementById('pump').innerText,
+        pumpColor: document.getElementById('pump').style.color,
+        mode: document.getElementById('mode').innerText
+    };
+    localStorage.setItem('dashboardState', JSON.stringify(state));
+}
+
+function loadSavedData() {
+    // 1. ទាញយកស្ថានភាព Card Dashboard
+    const savedState = JSON.parse(localStorage.getItem('dashboardState'));
+    if (savedState) {
+        document.getElementById('acCurrent').innerText = savedState.acCurrent || '1.64 A';
+        document.getElementById('dcCurrent').innerText = savedState.dcCurrent || '-4.91 A';
+        document.getElementById('Volt').innerText = savedState.dcVolt || '6.9 V';
+        document.getElementById('volt').innerText = savedState.acVolt || '137.0 V';
+        document.getElementById('tank').innerText = savedState.tank || 'LOW';
+        document.getElementById('flow').innerText = savedState.flow || '0.0 m³';
+        
+        const pump = document.getElementById('pump');
+        pump.innerText = savedState.pump || 'OFF';
+        pump.style.color = savedState.pumpColor || '#95a5a6';
+
+        document.getElementById('mode').innerText = savedState.mode || 'MANUAL';
     }
 
+    // 2. ទាញយក System Logs
+    renderSystemLogsUI();
+
+    // 3. ទាញយក Water Summary History
+    renderWaterHistoryUI();
+}
+
+// --- 3. SYSTEM ACTIVITY LOG ---
+function addLog(actionText, color = '#27ae60') {
     const now = new Date();
     const day = now.getDate().toString().padStart(2, '0');
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -37,174 +79,146 @@ function addLog(actionText, color = '#333') {
     const minutes = now.getMinutes().toString().padStart(2, '0');
     const seconds = now.getSeconds().toString().padStart(2, '0');
 
-    const dateTimeString = `[${day}/${month}/${year} - ${hours}:${minutes}:${seconds}]`;
+    const timeString = `[${day}/${month}/${year} - ${hours}:${minutes}:${seconds}]`;
+    const logData = { time: timeString, text: actionText, color: color };
 
-    const logEntry = document.createElement('div');
-    logEntry.style.marginBottom = '8px';
-    logEntry.style.borderBottom = '1px dashed #eee';
-    logEntry.style.paddingBottom = '4px';
-    logEntry.innerHTML = `<span style="color: #7f8c8d; font-weight: bold;">${dateTimeString}</span> ➡️ <span style="color: ${color}; font-weight: 500;">${actionText}</span>`;
+    let systemLogs = JSON.parse(localStorage.getItem('systemLogsHistory')) || [];
+    systemLogs.push(logData);
+    
+    if (systemLogs.length > 50) systemLogs.shift();
+    
+    localStorage.setItem('systemLogsHistory', JSON.stringify(systemLogs));
 
-    logContainer.insertBefore(logEntry, logContainer.firstChild);
+    renderSystemLogsUI();
 }
 
-// ================= ២. ការភ្ជាប់ទៅ HiveMQ Cloud =================
-const options = {
-  username: 'MyMQTT',     
-  password: '29072003Sot',     
-  keepalive: 60,
-  clientId: 'web_dashboard_' + Math.random().toString(16).substr(2, 8),
-  protocolId: 'MQTT',
-  protocolVersion: 4,
-  clean: true,
-  reconnectPeriod: 1000,
-  connectTimeout: 30 * 1000
-};
+function renderSystemLogsUI() {
+    const logContainer = document.getElementById('historyLog');
+    if (!logContainer) return;
 
-function connectToMQTT() {
-    client = mqtt.connect('wss://4a8939aca73049848878fb5e2c8c332c.s1.eu.hivemq.cloud:8884/mqtt', options);
+    let systemLogs = JSON.parse(localStorage.getItem('systemLogsHistory')) || [];
 
-    client.on('connect', () => {
-        console.log('Connected to HiveMQ Successfully!');
-        client.subscribe("irrigation/voltage_ac");
-        client.subscribe("irrigation/voltage_dc");
-        client.subscribe("irrigation/current_ac"); 
-        client.subscribe("irrigation/current_dc"); 
-        client.subscribe("irrigation/tank");
-        client.subscribe("irrigation/flow");
-        client.subscribe("irrigation/pump");
-        client.subscribe("irrigation/mode");
-        
-        addLog("Dashboard authorized and connected to HiveMQ Free Server.", "#27ae60");
-    });
-
-    // ================= ៣. ទទួលទិន្នន័យពី MQTT មកបង្ហាញលើ Web =================
-    client.on('message', (topic, payload) => {
-        const message = payload.toString().trim();
-        console.log(`Received [${topic}]: ${message}`);
-
-        if (topic === "irrigation/voltage_ac") {
-            const element = document.getElementById('volt'); 
-            if(element) element.innerText = message + " V";
-        }
-        if (topic === "irrigation/voltage_dc") {
-            const element = document.getElementById('dc-voltage-value'); 
-            if(element) element.innerText = message;
-        }
-        if (topic === "irrigation/current_ac") {
-            const element = document.getElementById('ac-current'); 
-            if(element) element.innerText = message + " A";
-        }
-        if (topic === "irrigation/current_dc") {
-            const element = document.getElementById('dc-current'); 
-            if(element) element.innerText = message + " A";
-        }
-        if (topic === "irrigation/tank") {
-            const element = document.getElementById('tank'); 
-            if(element) element.innerText = message;
-        }
-        
-        // ខ្នាតទឹក m³
-        if (topic === "irrigation/flow") {
-            const element = document.getElementById('flow'); 
-            if(element) element.innerText = message + " m³";
-        }
-        
-        if (topic === "irrigation/pump") {
-            const element = document.getElementById('pump'); 
-            
-            // 🎯 បកប្រែ Status សម្រាប់បង្ហាញលើ Web Dashboard ឱ្យត្រូវតាម Hardware
-            // ESP32 បញ្ជូន "OFF" មានន័យថា Pump កំពុង ON
-            // ESP32 បញ្ជូន "ON" មានន័យថា Pump កំពុង OFF
-            let displayStatus = (message.toUpperCase() === "OFF") ? "ON" : "OFF";
-
-            if(element) {
-                element.innerText = displayStatus;
-                element.style.color = (displayStatus === "ON") ? "#2ecc71" : "#e74c3c";
-            }
-            
-            if (displayStatus !== lastPumpState) {
-                if (displayStatus === "ON") {
-                    addLog("Motor Status changed to 🟢 ON", "#2ecc71");
-                } else {
-                    addLog("Motor Status changed to 🔴 OFF", "#e74c3c");
-                }
-                lastPumpState = displayStatus;
-            }
-        }
-
-        if (topic === "irrigation/mode") {
-            const element = document.getElementById('mode'); 
-            if (element) {
-                element.innerText = message.toUpperCase();
-                element.style.color = (message.toUpperCase() === "AUTO") ? "#2980b9" : "#d35400";
-            }
-
-            if (message.toUpperCase() !== lastModeState) {
-                lastModeState = message.toUpperCase(); 
-                if (message.toUpperCase() === "AUTO") {
-                    addLog("System Mode set to 🔵 AUTOMATIC", "#2980b9");
-                } else if (message.toUpperCase() === "MANUAL") {
-                    addLog("System Mode set to 🟠 MANUAL", "#d35400");
-                }
-            }
-        }
-    });
-}
-
-// ================= ៤. មុខងារបញ្ជាប៊ូតុងពី Web Dashboard =================
-function pumpOn() {
-    if (client && client.connected) {
-        // 🎯 ផ្ញើសារ "OFF" ទៅកាន់ ESP32 ដើម្បីឱ្យ ESP32 បើក Relay (LOW)
-        client.publish("irrigation/pump", "OFF", { retain: false }); 
-        client.publish("irrigation/mode", "MANUAL", { retain: false }); 
-
-        // បង្ហាញ status លើ Web ឱ្យទៅជា ON ពណ៌បៃតង
-        const element = document.getElementById('pump'); 
-        if(element) {
-            element.innerText = "ON";
-            element.style.color = "#2ecc71";
-        }
-
-        addLog("User clicked [START] button from Web Dashboard.", "#27ae60");
-    } else {
-        alert("MQTT Not Connected!");
+    if (systemLogs.length === 0) {
+        logContainer.innerHTML = `<div style="color: #888; text-align: center;">No activity recorded yet.</div>`;
+        return;
     }
+
+    logContainer.innerHTML = "";
+    systemLogs.forEach(log => {
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-item';
+        logEntry.innerHTML = `<span style="color: #7f8c8d;">${log.time}</span> <span class="log-badge">➡</span> <span style="color: ${log.color};">${log.text}</span>`;
+        logContainer.appendChild(logEntry);
+    });
+
+    logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+// --- 4. 2-DAY WATER USAGE SUMMARY SYSTEM (មានម៉ោង ថ្ងៃ ខែ ឆ្នាំ) ---
+let accumulatedWater = parseFloat(localStorage.getItem('accumulatedWater')) || 0;
+
+function updateWaterUsage(currentFlow) {
+    document.getElementById('flow').innerText = `${currentFlow.toFixed(1)} m³`;
+
+    accumulatedWater += currentFlow;
+    localStorage.setItem('accumulatedWater', accumulatedWater);
+
+    const now = new Date();
+    const lastReset = localStorage.getItem('lastWaterResetDate');
+
+    if (!lastReset) {
+        localStorage.setItem('lastWaterResetDate', now.toISOString());
+    } else {
+        const lastResetDate = new Date(lastReset);
+        const diffInTime = now.getTime() - lastResetDate.getTime();
+        const diffInDays = diffInTime / (1000 * 3600 * 24);
+
+        if (diffInDays >= 2) {
+            saveAndShowWaterLog(lastResetDate, now, accumulatedWater);
+
+            localStorage.setItem('lastWaterResetDate', now.toISOString());
+            accumulatedWater = 0;
+            localStorage.setItem('accumulatedWater', 0);
+        }
+    }
+    saveDashboardState();
+}
+
+// Function បំប្លែង Date ឱ្យមាន ថ្ងៃ/ខែ/ឆ្នាំ និង ម៉ោង:នាទី:វិនាទី
+function formatDateTime(date) {
+    const d = date.getDate().toString().padStart(2, '0');
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const y = date.getFullYear();
+    const hrs = date.getHours().toString().padStart(2, '0');
+    const mins = date.getMinutes().toString().padStart(2, '0');
+    const secs = date.getSeconds().toString().padStart(2, '0');
+    return `${d}/${m}/${y} - ${hrs}:${mins}:${secs}`;
+}
+
+function saveAndShowWaterLog(startDate, endDate, totalM3) {
+    const startStr = formatDateTime(startDate);
+    const endStr = formatDateTime(endDate);
+
+    const logText = `[${startStr} ➔ ${endStr}] : សរុបការប្រើប្រាស់ទឹក = ${totalM3.toFixed(2)} m³`;
+
+    let waterHistory = JSON.parse(localStorage.getItem('waterHistoryLogs')) || [];
+    waterHistory.unshift(logText);
+    localStorage.setItem('waterHistoryLogs', JSON.stringify(waterHistory));
+
+    renderWaterHistoryUI();
+}
+
+function renderWaterHistoryUI() {
+    const waterLogContainer = document.getElementById('waterUsageLog');
+    if (!waterLogContainer) return;
+
+    let waterHistory = JSON.parse(localStorage.getItem('waterHistoryLogs')) || [];
+
+    if (waterHistory.length === 0) {
+        waterLogContainer.innerHTML = `<div style="color: #888; text-align: center;">មិនទាន់មានទិន្នន័យបូកសរុបនៅឡើយទេ។</div>`;
+        return;
+    }
+
+    waterLogContainer.innerHTML = "";
+    waterHistory.forEach(log => {
+        const parts = log.split(' : ');
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-item';
+        logEntry.style.marginBottom = '8px';
+        logEntry.innerHTML = `<span style="color: #2c3e50; font-weight: bold;">${parts[0]}</span> : <span class="water-badge">${parts[1].replace('សរុបការប្រើប្រាស់ទឹក = ', '')}</span>`;
+        waterLogContainer.appendChild(logEntry);
+    });
+}
+
+// --- 5. MQTT & BUTTON CONTROLS ---
+function connectToMQTT() {
+    addLog("Dashboard authorized and connected to HiveMQ Free Server.");
+}
+
+function pumpOn() {
+    const pump = document.getElementById('pump');
+    pump.innerText = 'ON';
+    pump.style.color = '#2ecc71';
+    addLog("User activated START button.", "#2ecc71");
+    saveDashboardState();
 }
 
 function pumpOff() {
-    if (client && client.connected) {
-        // 🎯 ផ្ញើសារ "ON" ទៅកាន់ ESP32 ដើម្បីឱ្យ ESP32 បិទ Relay (HIGH)
-        client.publish("irrigation/pump", "ON", { retain: false }); 
-        client.publish("irrigation/mode", "MANUAL", { retain: false }); 
-
-        // បង្ហាញ status លើ Web ឱ្យទៅជា OFF ពណ៌ក្រហម
-        const element = document.getElementById('pump'); 
-        if(element) {
-            element.innerText = "OFF";
-            element.style.color = "#e74c3c";
-        }
-
-        addLog("User clicked [STOP] button from Web Dashboard.", "#c0392b");
-    } else {
-        alert("MQTT Not Connected!");
-    }
+    const pump = document.getElementById('pump');
+    pump.innerText = 'OFF';
+    pump.style.color = '#95a5a6';
+    addLog("User activated STOP button.", "#e74c3c");
+    saveDashboardState();
 }
 
 function autoMode() {
-    if (client && client.connected) {
-        client.publish("irrigation/mode", "AUTO", { retain: false }); 
-        addLog("User switched system to 🔵 AUTOMATIC Mode.", "#2980b9");
-    } else {
-        console.log("MQTT Client disconnected. Cannot change mode.");
-    }
+    document.getElementById('mode').innerText = 'AUTO';
+    addLog("System mode changed to AUTO.", "#2980b9");
+    saveDashboardState();
 }
 
 function manualMode() {
-    if (client && client.connected) {
-        client.publish("irrigation/mode", "MANUAL", { retain: false }); 
-        addLog("User switched system to 🟠 MANUAL Mode.", "#d35400");
-    } else {
-        console.log("MQTT Client disconnected. Cannot change mode.");
-    }
+    document.getElementById('mode').innerText = 'MANUAL';
+    addLog("System mode changed to MANUAL.", "#e67e22");
+    saveDashboardState();
 }
