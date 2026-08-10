@@ -33,17 +33,15 @@ function logout() {
     if (dashBox) dashBox.style.display = 'none';
 }
 
+// មុខងារទារ Password ជានិច្ចរាល់ពេលបើក ឬ Refresh Web
 window.onload = function() {
-    if (localStorage.getItem('isLoggedIn') === 'true') {
-        const loginBox = document.getElementById('loginContainer');
-        const dashBox = document.getElementById('dashboardContainer');
+    localStorage.removeItem('isLoggedIn');
+    
+    const loginBox = document.getElementById('loginContainer');
+    const dashBox = document.getElementById('dashboardContainer');
 
-        if (loginBox) loginBox.style.display = 'none';
-        if (dashBox) dashBox.style.display = 'block';
-        
-        if (typeof connectToMQTT === 'function') connectToMQTT();
-        if (typeof loadSavedData === 'function') loadSavedData();
-    }
+    if (loginBox) loginBox.style.display = 'block';
+    if (dashBox) dashBox.style.display = 'none';
 };
 
 // --- 2. Save & Load Dashboard Data ---
