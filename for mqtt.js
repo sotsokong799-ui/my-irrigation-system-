@@ -3,10 +3,7 @@ function checkPassword() {
     const passwordInput = document.getElementById('passwordInput');
     const errorMsg = document.getElementById('errorMessage');
     
-    if (!passwordInput) {
-        console.error("Missing #passwordInput element");
-        return;
-    }
+    if (!passwordInput) return;
 
     const passwordEntered = passwordInput.value;
     const correctPassword = "29072003"; 
@@ -20,7 +17,6 @@ function checkPassword() {
         
         localStorage.setItem('isLoggedIn', 'true');
         
-        // ហៅ Function ដោយសុវត្ថិភាព
         if (typeof connectToMQTT === 'function') connectToMQTT();
         if (typeof loadSavedData === 'function') loadSavedData();
     } else {
@@ -57,6 +53,8 @@ function saveDashboardState() {
         return el ? el.innerText : '';
     };
 
+    const tempEl = document.getElementById('motorTemp');
+
     const state = {
         acCurrent: getTxt('acCurrent'),
         dcCurrent: getTxt('dcCurrent'),
@@ -66,7 +64,8 @@ function saveDashboardState() {
         flow: getTxt('flow'),
         pump: getTxt('pump'),
         pumpColor: document.getElementById('pump') ? document.getElementById('pump').style.color : '',
-        mode: getTxt('mode')
+        motorTemp: getTxt('motorTemp'),
+        motorTempColor: tempEl ? tempEl.style.color : ''
     };
     localStorage.setItem('dashboardState', JSON.stringify(state));
 }
@@ -87,14 +86,34 @@ function loadSavedData() {
             pump.style.color = savedState.pumpColor || '#95a5a6';
         }
 
-        if (document.getElementById('mode')) document.getElementById('mode').innerText = savedState.mode || 'MANUAL';
+        const tempEl = document.getElementById('motorTemp');
+        if (tempEl) {
+            tempEl.innerText = savedState.motorTemp || 'NORMAL';
+            tempEl.style.color = savedState.motorTempColor || '#27ae60';
+        }
     }
 
     renderSystemLogsUI();
     renderWaterHistoryUI();
 }
 
-// --- 3. SYSTEM ACTIVITY LOG ---
+// --- 3. MOTOR TEMP SYSTEM ---
+function updateMotorTemp(status) {
+    const tempEl = document.getElementById('motorTemp');
+    if (!tempEl) return;
+
+    if (status.toUpperCase() === 'OVERHEAT' || status.toUpperCase() === 'HOT' || status === true) {
+        tempEl.innerText = 'OVERHEAT';
+        tempEl.style.color = '#e74c3c';
+        addLog("Warning: Motor status is OVERHEAT!", "#e74c3c");
+    } else {
+        tempEl.innerText = 'NORMAL';
+        tempEl.style.color = '#27ae60';
+    }
+    saveDashboardState();
+}
+
+// --- 4. SYSTEM ACTIVITY LOG ---
 function addLog(actionText, color = '#27ae60') {
     const now = new Date();
     const day = now.getDate().toString().padStart(2, '0');
@@ -138,7 +157,7 @@ function renderSystemLogsUI() {
     logContainer.scrollTop = logContainer.scrollHeight;
 }
 
-// --- 4. WATER USAGE SUMMARY SYSTEM ---
+// --- 5. WATER USAGE SUMMARY SYSTEM ---
 let accumulatedWater = parseFloat(localStorage.getItem('accumulatedWater')) || 0;
 
 function updateWaterUsage(currentFlow) {
@@ -211,7 +230,7 @@ function renderWaterHistoryUI() {
     });
 }
 
-// --- 5. MQTT & BUTTON CONTROLS ---
+// --- 6. MQTT & BUTTON CONTROLS ---
 function connectToMQTT() {
     addLog("Dashboard authorized and connected to HiveMQ Free Server.");
 }
@@ -233,19 +252,5 @@ function pumpOff() {
         pump.style.color = '#95a5a6';
     }
     addLog("User activated STOP button.", "#e74c3c");
-    saveDashboardState();
-}
-
-function autoMode() {
-    const mode = document.getElementById('mode');
-    if (mode) mode.innerText = 'AUTO';
-    addLog("System mode changed to AUTO.", "#2980b9");
-    saveDashboardState();
-}
-
-function manualMode() {
-    const mode = document.getElementById('mode');
-    if (mode) mode.innerText = 'MANUAL';
-    addLog("System mode changed to MANUAL.", "#e67e22");
     saveDashboardState();
 }
