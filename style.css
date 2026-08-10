@@ -83,7 +83,6 @@ body {
     font-size: 1.8rem;
 }
 
-/* ប៊ូតុង Logout ក្នុង Header */
 .btn-logout {
     background-color: #e74c3c;
     color: white;
@@ -164,7 +163,6 @@ body {
 .tank-level { color: #3498db; }
 .water-flow { color: #27ae60; }
 .pump-status { color: #95a5a6; }
-.system-mode { color: #e67e22; }
 
 /* --- Buttons --- */
 .button-group {
@@ -190,8 +188,6 @@ body {
 
 .btn-start { background-color: #2ecc71; }
 .btn-stop { background-color: #e74c3c; }
-.btn-auto { background-color: #2980b9; }
-.btn-manual { background-color: #e67e22; }
 
 /* --- History Section --- */
 .history-section {
