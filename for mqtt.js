@@ -1,84 +1,96 @@
-// --- 1. LOGIN & LOGOUT SYSTEM ---
+// --- 1. LOGIN SYSTEM ---
 function checkPassword() {
-    const passwordEntered = document.getElementById('passwordInput').value;
-    const correctPassword = "29072003"; 
+    const passwordInput = document.getElementById('passwordInput');
     const errorMsg = document.getElementById('errorMessage');
+    
+    if (!passwordInput) {
+        console.error("Missing #passwordInput element");
+        return;
+    }
+
+    const passwordEntered = passwordInput.value;
+    const correctPassword = "29072003"; 
 
     if (passwordEntered === correctPassword) {
-        document.getElementById('loginContainer').style.display = 'none';
-        document.getElementById('dashboardContainer').style.display = 'block';
+        const loginBox = document.getElementById('loginContainer');
+        const dashBox = document.getElementById('dashboardContainer');
+
+        if (loginBox) loginBox.style.display = 'none';
+        if (dashBox) dashBox.style.display = 'block';
         
-        // រក្សាស្ថានភាព Login ទុកក្នុង Storage
         localStorage.setItem('isLoggedIn', 'true');
         
-        connectToMQTT();
-        loadSavedData(); // ទាញយកទិន្នន័យទាំងអស់មកបង្ហាញវិញ
+        // ហៅ Function ដោយសុវត្ថិភាព
+        if (typeof connectToMQTT === 'function') connectToMQTT();
+        if (typeof loadSavedData === 'function') loadSavedData();
     } else {
-        errorMsg.style.display = 'block';
+        if (errorMsg) errorMsg.style.display = 'block';
     }
 }
 
-// ចាកចេញពីប្រព័ន្ធ (Logout)
 function logout() {
-    // លុបស្ថានភាព Login ចេញពី Storage
     localStorage.removeItem('isLoggedIn');
-    
-    // បង្ហាញផ្ទាំង Login និងលាក់ផ្ទាំង Dashboard
-    document.getElementById('loginContainer').style.display = 'block';
-    document.getElementById('dashboardContainer').style.display = 'none';
+    const loginBox = document.getElementById('loginContainer');
+    const dashBox = document.getElementById('dashboardContainer');
+
+    if (loginBox) loginBox.style.display = 'block';
+    if (dashBox) dashBox.style.display = 'none';
 }
 
-// ឆែកមើលថាតើធ្លាប់ Login ហើយឬនៅពេលបើក App មកភ្លាម
 window.onload = function() {
     if (localStorage.getItem('isLoggedIn') === 'true') {
-        document.getElementById('loginContainer').style.display = 'none';
-        document.getElementById('dashboardContainer').style.display = 'block';
-        connectToMQTT();
-        loadSavedData();
-    } else {
-        document.getElementById('loginContainer').style.display = 'block';
-        document.getElementById('dashboardContainer').style.display = 'none';
+        const loginBox = document.getElementById('loginContainer');
+        const dashBox = document.getElementById('dashboardContainer');
+
+        if (loginBox) loginBox.style.display = 'none';
+        if (dashBox) dashBox.style.display = 'block';
+        
+        if (typeof connectToMQTT === 'function') connectToMQTT();
+        if (typeof loadSavedData === 'function') loadSavedData();
     }
 };
 
-// --- 2. SAVE & LOAD DASHBOARD DATA ---
+// --- 2. Save & Load Dashboard Data ---
 function saveDashboardState() {
+    const getTxt = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.innerText : '';
+    };
+
     const state = {
-        acCurrent: document.getElementById('acCurrent').innerText,
-        dcCurrent: document.getElementById('dcCurrent').innerText,
-        dcVolt: document.getElementById('Volt').innerText,
-        acVolt: document.getElementById('volt').innerText,
-        tank: document.getElementById('tank').innerText,
-        flow: document.getElementById('flow').innerText,
-        pump: document.getElementById('pump').innerText,
-        pumpColor: document.getElementById('pump').style.color,
-        mode: document.getElementById('mode').innerText
+        acCurrent: getTxt('acCurrent'),
+        dcCurrent: getTxt('dcCurrent'),
+        dcVolt: getTxt('Volt'),
+        acVolt: getTxt('volt'),
+        tank: getTxt('tank'),
+        flow: getTxt('flow'),
+        pump: getTxt('pump'),
+        pumpColor: document.getElementById('pump') ? document.getElementById('pump').style.color : '',
+        mode: getTxt('mode')
     };
     localStorage.setItem('dashboardState', JSON.stringify(state));
 }
 
 function loadSavedData() {
-    // 1. ទាញយកស្ថានភាព Card Dashboard
     const savedState = JSON.parse(localStorage.getItem('dashboardState'));
     if (savedState) {
-        document.getElementById('acCurrent').innerText = savedState.acCurrent || '1.64 A';
-        document.getElementById('dcCurrent').innerText = savedState.dcCurrent || '-4.91 A';
-        document.getElementById('Volt').innerText = savedState.dcVolt || '6.9 V';
-        document.getElementById('volt').innerText = savedState.acVolt || '137.0 V';
-        document.getElementById('tank').innerText = savedState.tank || 'LOW';
-        document.getElementById('flow').innerText = savedState.flow || '0.0 m³';
+        if (document.getElementById('acCurrent')) document.getElementById('acCurrent').innerText = savedState.acCurrent || '1.64 A';
+        if (document.getElementById('dcCurrent')) document.getElementById('dcCurrent').innerText = savedState.dcCurrent || '-4.91 A';
+        if (document.getElementById('Volt')) document.getElementById('Volt').innerText = savedState.dcVolt || '6.9 V';
+        if (document.getElementById('volt')) document.getElementById('volt').innerText = savedState.acVolt || '137.0 V';
+        if (document.getElementById('tank')) document.getElementById('tank').innerText = savedState.tank || 'LOW';
+        if (document.getElementById('flow')) document.getElementById('flow').innerText = savedState.flow || '0.0 m³';
         
         const pump = document.getElementById('pump');
-        pump.innerText = savedState.pump || 'OFF';
-        pump.style.color = savedState.pumpColor || '#95a5a6';
+        if (pump) {
+            pump.innerText = savedState.pump || 'OFF';
+            pump.style.color = savedState.pumpColor || '#95a5a6';
+        }
 
-        document.getElementById('mode').innerText = savedState.mode || 'MANUAL';
+        if (document.getElementById('mode')) document.getElementById('mode').innerText = savedState.mode || 'MANUAL';
     }
 
-    // 2. ទាញយក System Logs
     renderSystemLogsUI();
-
-    // 3. ទាញយក Water Summary History
     renderWaterHistoryUI();
 }
 
@@ -101,7 +113,6 @@ function addLog(actionText, color = '#27ae60') {
     if (systemLogs.length > 50) systemLogs.shift();
     
     localStorage.setItem('systemLogsHistory', JSON.stringify(systemLogs));
-
     renderSystemLogsUI();
 }
 
@@ -127,11 +138,12 @@ function renderSystemLogsUI() {
     logContainer.scrollTop = logContainer.scrollHeight;
 }
 
-// --- 4. 2-DAY WATER USAGE SUMMARY SYSTEM ---
+// --- 4. WATER USAGE SUMMARY SYSTEM ---
 let accumulatedWater = parseFloat(localStorage.getItem('accumulatedWater')) || 0;
 
 function updateWaterUsage(currentFlow) {
-    document.getElementById('flow').innerText = `${currentFlow.toFixed(1)} m³`;
+    const flowEl = document.getElementById('flow');
+    if (flowEl) flowEl.innerText = `${currentFlow.toFixed(1)} m³`;
 
     accumulatedWater += currentFlow;
     localStorage.setItem('accumulatedWater', accumulatedWater);
@@ -143,12 +155,10 @@ function updateWaterUsage(currentFlow) {
         localStorage.setItem('lastWaterResetDate', now.toISOString());
     } else {
         const lastResetDate = new Date(lastReset);
-        const diffInTime = now.getTime() - lastResetDate.getTime();
-        const diffInDays = diffInTime / (1000 * 3600 * 24);
+        const diffInDays = (now.getTime() - lastResetDate.getTime()) / (1000 * 3600 * 24);
 
         if (diffInDays >= 2) {
             saveAndShowWaterLog(lastResetDate, now, accumulatedWater);
-
             localStorage.setItem('lastWaterResetDate', now.toISOString());
             accumulatedWater = 0;
             localStorage.setItem('accumulatedWater', 0);
@@ -170,7 +180,6 @@ function formatDateTime(date) {
 function saveAndShowWaterLog(startDate, endDate, totalM3) {
     const startStr = formatDateTime(startDate);
     const endStr = formatDateTime(endDate);
-
     const logText = `[${startStr} ➔ ${endStr}] : សរុបការប្រើប្រាស់ទឹក = ${totalM3.toFixed(2)} m³`;
 
     let waterHistory = JSON.parse(localStorage.getItem('waterHistoryLogs')) || [];
@@ -209,28 +218,34 @@ function connectToMQTT() {
 
 function pumpOn() {
     const pump = document.getElementById('pump');
-    pump.innerText = 'ON';
-    pump.style.color = '#2ecc71';
+    if (pump) {
+        pump.innerText = 'ON';
+        pump.style.color = '#2ecc71';
+    }
     addLog("User activated START button.", "#2ecc71");
     saveDashboardState();
 }
 
 function pumpOff() {
     const pump = document.getElementById('pump');
-    pump.innerText = 'OFF';
-    pump.style.color = '#95a5a6';
+    if (pump) {
+        pump.innerText = 'OFF';
+        pump.style.color = '#95a5a6';
+    }
     addLog("User activated STOP button.", "#e74c3c");
     saveDashboardState();
 }
 
 function autoMode() {
-    document.getElementById('mode').innerText = 'AUTO';
+    const mode = document.getElementById('mode');
+    if (mode) mode.innerText = 'AUTO';
     addLog("System mode changed to AUTO.", "#2980b9");
     saveDashboardState();
 }
 
 function manualMode() {
-    document.getElementById('mode').innerText = 'MANUAL';
+    const mode = document.getElementById('mode');
+    if (mode) mode.innerText = 'MANUAL';
     addLog("System mode changed to MANUAL.", "#e67e22");
     saveDashboardState();
 }
