@@ -6,7 +6,7 @@ function checkPassword() {
     if (!passwordInput) return;
 
     const passwordEntered = passwordInput.value;
-    const correctPassword = "29072003"; 
+    const correctPassword = "10112003"; 
 
     if (passwordEntered === correctPassword) {
         const loginBox = document.getElementById('loginContainer');
