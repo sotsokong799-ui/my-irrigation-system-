@@ -51,7 +51,7 @@ function saveDashboardState() {
         return el ? el.innerText : '';
     };
 
-    const tempEl = document.getElementById('motorTemp');
+    const loadEl = document.getElementById('motorLoad');
 
     const state = {
         acCurrent: getTxt('acCurrent'),
@@ -62,8 +62,8 @@ function saveDashboardState() {
         flow: getTxt('flow'),
         pump: getTxt('pump'),
         pumpColor: document.getElementById('pump') ? document.getElementById('pump').style.color : '',
-        motorTemp: getTxt('motorTemp'),
-        motorTempColor: tempEl ? tempEl.style.color : ''
+        motorLoad: getTxt('motorLoad'),
+        motorLoadColor: loadEl ? loadEl.style.color : ''
     };
     localStorage.setItem('dashboardState', JSON.stringify(state));
 }
@@ -84,10 +84,10 @@ function loadSavedData() {
             pump.style.color = savedState.pumpColor || '#95a5a6';
         }
 
-        const tempEl = document.getElementById('motorTemp');
-        if (tempEl) {
-            tempEl.innerText = savedState.motorTemp || 'NORMAL';
-            tempEl.style.color = savedState.motorTempColor || '#27ae60';
+        const loadEl = document.getElementById('motorLoad');
+        if (loadEl) {
+            loadEl.innerText = savedState.motorLoad || 'NORMAL';
+            loadEl.style.color = savedState.motorLoadColor || '#27ae60';
         }
     }
 
@@ -95,18 +95,18 @@ function loadSavedData() {
     renderWaterHistoryUI();
 }
 
-// --- 3. MOTOR TEMP SYSTEM ---
-function updateMotorTemp(status) {
-    const tempEl = document.getElementById('motorTemp');
-    if (!tempEl) return;
+// --- 3. MOTOR LOAD SYSTEM ---
+function updateMotorLoad(status) {
+    const loadEl = document.getElementById('motorLoad');
+    if (!loadEl) return;
 
-    if (status.toUpperCase() === 'OVERHEAT' || status.toUpperCase() === 'HOT' || status === true) {
-        tempEl.innerText = 'OVERHEAT';
-        tempEl.style.color = '#e74c3c';
-        addLog("Warning: Motor status is OVERHEAT!", "#e74c3c");
+    if (status.toUpperCase() === 'OVERLOAD' || status.toUpperCase() === 'HIGH' || status === true) {
+        loadEl.innerText = 'OVERLOAD';
+        loadEl.style.color = '#e74c3c';
+        addLog("Warning: Motor status is OVERLOAD!", "#e74c3c");
     } else {
-        tempEl.innerText = 'NORMAL';
-        tempEl.style.color = '#27ae60';
+        loadEl.innerText = 'NORMAL';
+        loadEl.style.color = '#27ae60';
     }
     saveDashboardState();
 }
