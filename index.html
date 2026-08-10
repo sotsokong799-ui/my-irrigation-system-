@@ -17,7 +17,7 @@
         
         <input type="password" id="passwordInput" placeholder="Enter Password">
         <button onclick="checkPassword()">LOGIN</button>
-        <p id="errorMessage">❌ Incorrect Password! Try again.</p>
+        <p id="errorMessage" style="display: none;">❌ Incorrect Password! Try again.</p>
     </div>
 
     <!-- ================= DASHBOARD SECTION ================= -->
@@ -28,6 +28,8 @@
                 <span class="icon">🌱</span>
                 <h1>IoT Irrigation Dashboard</h1>
             </div>
+            <!-- បន្ថែមប៊ូតុង Logout ត្រង់នេះ -->
+            <button class="btn-logout" onclick="logout()">LOGOUT</button>
         </header>
 
         <main class="container">
