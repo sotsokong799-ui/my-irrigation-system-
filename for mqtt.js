@@ -1,4 +1,4 @@
-// --- 1. LOGIN SYSTEM ---
+// --- 1. LOGIN & LOGOUT SYSTEM ---
 function checkPassword() {
     const passwordEntered = document.getElementById('passwordInput').value;
     const correctPassword = "29072003"; 
@@ -18,6 +18,16 @@ function checkPassword() {
     }
 }
 
+// ចាកចេញពីប្រព័ន្ធ (Logout)
+function logout() {
+    // លុបស្ថានភាព Login ចេញពី Storage
+    localStorage.removeItem('isLoggedIn');
+    
+    // បង្ហាញផ្ទាំង Login និងលាក់ផ្ទាំង Dashboard
+    document.getElementById('loginContainer').style.display = 'block';
+    document.getElementById('dashboardContainer').style.display = 'none';
+}
+
 // ឆែកមើលថាតើធ្លាប់ Login ហើយឬនៅពេលបើក App មកភ្លាម
 window.onload = function() {
     if (localStorage.getItem('isLoggedIn') === 'true') {
@@ -25,10 +35,13 @@ window.onload = function() {
         document.getElementById('dashboardContainer').style.display = 'block';
         connectToMQTT();
         loadSavedData();
+    } else {
+        document.getElementById('loginContainer').style.display = 'block';
+        document.getElementById('dashboardContainer').style.display = 'none';
     }
 };
 
-// --- 2. Save & Load Dashboard Data ---
+// --- 2. SAVE & LOAD DASHBOARD DATA ---
 function saveDashboardState() {
     const state = {
         acCurrent: document.getElementById('acCurrent').innerText,
@@ -114,7 +127,7 @@ function renderSystemLogsUI() {
     logContainer.scrollTop = logContainer.scrollHeight;
 }
 
-// --- 4. 2-DAY WATER USAGE SUMMARY SYSTEM (មានម៉ោង ថ្ងៃ ខែ ឆ្នាំ) ---
+// --- 4. 2-DAY WATER USAGE SUMMARY SYSTEM ---
 let accumulatedWater = parseFloat(localStorage.getItem('accumulatedWater')) || 0;
 
 function updateWaterUsage(currentFlow) {
@@ -144,7 +157,6 @@ function updateWaterUsage(currentFlow) {
     saveDashboardState();
 }
 
-// Function បំប្លែង Date ឱ្យមាន ថ្ងៃ/ខែ/ឆ្នាំ និង ម៉ោង:នាទី:វិនាទី
 function formatDateTime(date) {
     const d = date.getDate().toString().padStart(2, '0');
     const m = (date.getMonth() + 1).toString().padStart(2, '0');
