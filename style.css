@@ -6,7 +6,12 @@
 }
 
 body {
-    background-color: #f2f5f8;
+    /* ដាក់ Link រូបភាព ឬផ្លូវនៃរូបភាពក្នុងកុំព្យូទ័ររបស់អ្នក */
+    background-image: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     color: #333;
     padding-bottom: 40px;
 }
@@ -16,10 +21,11 @@ body {
     max-width: 400px;
     margin: 100px auto;
     padding: 30px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    background: rgba(255, 255, 255, 0.95); /* ពណ៌សថ្លាល្មម */
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
     text-align: center;
+    backdrop-filter: blur(5px);
 }
 
 #loginContainer h2 {
@@ -38,7 +44,7 @@ body {
     padding: 12px;
     margin-bottom: 15px;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 16px;
 }
 
@@ -48,7 +54,7 @@ body {
     background: #2ecc71;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 16px;
     cursor: pointer;
     font-weight: bold;
@@ -63,14 +69,15 @@ body {
 
 /* --- Header Styling --- */
 .header {
-    background-color: #2ecc71;
+    background-color: rgba(46, 204, 113, 0.9);
     color: white;
     padding: 15px 30px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     margin-bottom: 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    backdrop-filter: blur(5px);
 }
 
 .header-title {
@@ -133,16 +140,17 @@ body {
 }
 
 .card {
-    background: white;
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.9); /* ពណ៌សថ្លារលោង */
+    border-radius: 10px;
     padding: 25px 15px;
     text-align: center;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
     position: relative;
+    backdrop-filter: blur(5px);
 }
 
 .card-active {
-    border-left: 4px solid #2980b9;
+    border-left: 5px solid #2980b9;
 }
 
 .card h3 {
@@ -181,20 +189,25 @@ body {
     font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
-    transition: opacity 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.1s ease, opacity 0.2s ease;
 }
 
-.btn:hover { opacity: 0.9; }
+.btn:hover { 
+    opacity: 0.9; 
+    transform: translateY(-2px);
+}
 
 .btn-start { background-color: #2ecc71; }
 .btn-stop { background-color: #e74c3c; }
 
 /* --- History Section --- */
 .history-section {
-    background: white;
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 10px;
     padding: 25px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(5px);
 }
 
 .history-header {
@@ -213,7 +226,7 @@ body {
 }
 
 .history-box {
-    background-color: #f8f9fa;
+    background-color: rgba(248, 249, 250, 0.85);
     border: 1px dashed #dcdde1;
     border-radius: 6px;
     padding: 15px;
