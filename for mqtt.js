@@ -1,10 +1,13 @@
 // ==========================================
-// 1. CONFIGURATION & MQTT GLOBALS
+// 1. CONFIGURATION & MQTT GLOBALS (HIVEMQ CLOUD)
 // ==========================================
-const MQTT_HOST = "broker.hivemq.com";
+const MQTT_HOST = "4a8939aca73049848878fb5e2c8c332c.s1.eu.hivemq.cloud";
+const MQTT_PORT = 8884; // WebSocket Port សម្រាប់ HiveMQ Cloud SSL/TLS
+const MQTT_USER = "MyMQTT";
+const MQTT_PASS = "29072003Sot";
 const MQTT_CLIENT_ID = "IrrigationDash_" + Math.random().toString(16).substr(2, 8);
 
-// MQTT Topics
+// MQTT Topics matching ESP32-S3 Firmware
 const TOPIC_PUMP_CONTROL = "irrigation/pump/control";
 const TOPIC_PUMP_STATUS  = "irrigation/pump/status";
 const TOPIC_SENSOR_DATA  = "irrigation/sensors/data";
@@ -63,21 +66,19 @@ window.onload = function() {
 };
 
 // ==========================================
-// 3. MQTT CONNECTION & HANDLING (FIXED PORT & SSL)
+// 3. MQTT CONNECTION & HANDLING
 // ==========================================
 function connectToMQTT() {
-    // ឆែកមើលថា Web ដើរលើ HTTPS ឬ HTTP ដើម្បីជ្រើសរើស Port ឱ្យត្រូវ
-    const isHTTPS = window.location.protocol === 'https:';
-    const port = isHTTPS ? 8884 : 8000;
-
-    client = new Paho.MQTT.Client(MQTT_HOST, Number(port), MQTT_CLIENT_ID);
+    client = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), MQTT_CLIENT_ID);
 
     client.onConnectionLost = onConnectionLost;
     client.onMessageArrived = onMessageArrived;
 
     const options = {
-        timeout: 5,
-        useSSL: isHTTPS, // ប្រើ SSL បើ Web ជា HTTPS
+        timeout: 10,
+        useSSL: true,         // HiveMQ Cloud ទាមទារ SSL/TLS ជានិច្ច
+        userName: MQTT_USER,
+        password: MQTT_PASS,
         cleanSession: true,
         onSuccess: onConnect,
         onFailure: onConnectFailure
@@ -87,7 +88,7 @@ function connectToMQTT() {
 }
 
 function onConnect() {
-    addLog("Connected to HiveMQ Broker via WebSockets.", "#27ae60");
+    addLog("Connected to HiveMQ Cloud Broker via WebSockets.", "#27ae60");
     // Subscribe ទៅកាន់ Topics ដើម្បីទទួលទិន្នន័យពី ESP32-S3
     client.subscribe(TOPIC_PUMP_STATUS);
     client.subscribe(TOPIC_SENSOR_DATA);
@@ -228,10 +229,10 @@ function saveDashboardState() {
 function loadSavedData() {
     const savedState = JSON.parse(localStorage.getItem('dashboardState'));
     if (savedState) {
-        if (document.getElementById('acCurrent')) document.getElementById('acCurrent').innerText = savedState.acCurrent || '1.64 A';
-        if (document.getElementById('dcCurrent')) document.getElementById('dcCurrent').innerText = savedState.dcCurrent || '-4.91 A';
-        if (document.getElementById('Volt')) document.getElementById('Volt').innerText = savedState.dcVolt || '6.9 V';
-        if (document.getElementById('volt')) document.getElementById('volt').innerText = savedState.acVolt || '137.0 V';
+        if (document.getElementById('acCurrent')) document.getElementById('acCurrent').innerText = savedState.acCurrent || '0.00 A';
+        if (document.getElementById('dcCurrent')) document.getElementById('dcCurrent').innerText = savedState.dcCurrent || '0.00 A';
+        if (document.getElementById('Volt')) document.getElementById('Volt').innerText = savedState.dcVolt || '0.0 V';
+        if (document.getElementById('volt')) document.getElementById('volt').innerText = savedState.acVolt || '0.0 V';
         if (document.getElementById('tank')) document.getElementById('tank').innerText = savedState.tank || 'LOW';
         if (document.getElementById('flow')) document.getElementById('flow').innerText = savedState.flow || '0.0 m³';
         
