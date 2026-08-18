@@ -1,4 +1,20 @@
-// --- 1. LOGIN SYSTEM ---
+// ==========================================
+// 1. CONFIGURATION & MQTT GLOBALS
+// ==========================================
+const MQTT_HOST = "broker.hivemq.com";
+const MQTT_PORT = 8000; // WebSocket Port សម្រាប់ Browser
+const MQTT_CLIENT_ID = "IrrigationDash_" + Math.random().toString(16).substr(2, 8);
+
+// MQTT Topics
+const TOPIC_PUMP_CONTROL = "irrigation/pump/control";
+const TOPIC_PUMP_STATUS  = "irrigation/pump/status";
+const TOPIC_SENSOR_DATA  = "irrigation/sensors/data";
+
+let client = null;
+
+// ==========================================
+// 2. LOGIN SYSTEM
+// ==========================================
 function checkPassword() {
     const passwordInput = document.getElementById('passwordInput');
     const errorMsg = document.getElementById('errorMessage');
@@ -17,8 +33,8 @@ function checkPassword() {
         
         localStorage.setItem('isLoggedIn', 'true');
         
-        if (typeof connectToMQTT === 'function') connectToMQTT();
-        if (typeof loadSavedData === 'function') loadSavedData();
+        connectToMQTT();
+        loadSavedData();
     } else {
         if (errorMsg) errorMsg.style.display = 'block';
     }
@@ -26,6 +42,9 @@ function checkPassword() {
 
 function logout() {
     localStorage.removeItem('isLoggedIn');
+    if (client && client.isConnected()) {
+        client.disconnect();
+    }
     const loginBox = document.getElementById('loginContainer');
     const dashBox = document.getElementById('dashboardContainer');
 
@@ -44,7 +63,140 @@ window.onload = function() {
     if (dashBox) dashBox.style.display = 'none';
 };
 
-// --- 2. Save & Load Dashboard Data ---
+// ==========================================
+// 3. MQTT CONNECTION & HANDLING
+// ==========================================
+function connectToMQTT() {
+    client = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), MQTT_CLIENT_ID);
+
+    client.onConnectionLost = onConnectionLost;
+    client.onMessageArrived = onMessageArrived;
+
+    const options = {
+        timeout: 3,
+        onSuccess: onConnect,
+        onFailure: onConnectFailure
+    };
+
+    client.connect(options);
+}
+
+function onConnect() {
+    addLog("Connected to HiveMQ Broker via WebSockets.", "#27ae60");
+    // Subscribe ទៅកាន់ Topics ដើម្បីទទួលទិន្នន័យពី ESP32-S3
+    client.subscribe(TOPIC_PUMP_STATUS);
+    client.subscribe(TOPIC_SENSOR_DATA);
+}
+
+function onConnectFailure(responseObject) {
+    addLog("MQTT Connection Failed: " + responseObject.errorMessage, "#e74c3c");
+}
+
+function onConnectionLost(responseObject) {
+    if (responseObject.errorCode !== 0) {
+        addLog("MQTT Lost Connection: " + responseObject.errorMessage, "#e74c3c");
+    }
+}
+
+function onMessageArrived(message) {
+    const topic = message.destinationName;
+    const payload = message.payloadString;
+
+    // 1. ទទួលស្ថានភាព Pump ពី ESP32 (ទោះជាចុចលើ Web ឬ Screen HMI)
+    if (topic === TOPIC_PUMP_STATUS) {
+        const pumpEl = document.getElementById('pump');
+        if (pumpEl) {
+            pumpEl.innerText = payload;
+            pumpEl.style.color = (payload.toUpperCase() === 'ON') ? '#2ecc71' : '#95a5a6';
+        }
+        addLog(`Pump status updated to: ${payload}`, payload.toUpperCase() === 'ON' ? '#2ecc71' : '#e74c3c');
+        saveDashboardState();
+    }
+
+    // 2. ទទួលទិន្នន័យ Sensors (JSON) ពី ESP32-S3
+    if (topic === TOPIC_SENSOR_DATA) {
+        try {
+            const data = JSON.parse(payload);
+            if (data.acCurrent !== undefined && document.getElementById('acCurrent')) 
+                document.getElementById('acCurrent').innerText = `${parseFloat(data.acCurrent).toFixed(2)} A`;
+            if (data.dcCurrent !== undefined && document.getElementById('dcCurrent')) 
+                document.getElementById('dcCurrent').innerText = `${parseFloat(data.dcCurrent).toFixed(2)} A`;
+            if (data.dcVolt !== undefined && document.getElementById('Volt')) 
+                document.getElementById('Volt').innerText = `${parseFloat(data.dcVolt).toFixed(1)} V`;
+            if (data.acVolt !== undefined && document.getElementById('volt')) 
+                document.getElementById('volt').innerText = `${parseFloat(data.acVolt).toFixed(1)} V`;
+            if (data.tank !== undefined && document.getElementById('tank')) 
+                document.getElementById('tank').innerText = data.tank;
+            
+            if (data.flow !== undefined) {
+                updateWaterUsage(parseFloat(data.flow));
+            }
+            if (data.motorLoad !== undefined) {
+                updateMotorLoad(data.motorLoad);
+            }
+            saveDashboardState();
+        } catch (e) {
+            console.error("Invalid Sensor JSON received:", payload);
+        }
+    }
+}
+
+// ==========================================
+// 4. BUTTON CONTROLS (START / STOP)
+// ==========================================
+function pumpOn() {
+    const pump = document.getElementById('pump');
+    if (pump) {
+        pump.innerText = 'ON';
+        pump.style.color = '#2ecc71';
+    }
+    addLog("User activated START button.", "#2ecc71");
+
+    if (client && client.isConnected()) {
+        const message = new Paho.MQTT.Message("ON");
+        message.destinationName = TOPIC_PUMP_CONTROL;
+        client.send(message);
+    }
+    saveDashboardState();
+}
+
+function pumpOff() {
+    const pump = document.getElementById('pump');
+    if (pump) {
+        pump.innerText = 'OFF';
+        pump.style.color = '#95a5a6';
+    }
+    addLog("User activated STOP button.", "#e74c3c");
+
+    if (client && client.isConnected()) {
+        const message = new Paho.MQTT.Message("OFF");
+        message.destinationName = TOPIC_PUMP_CONTROL;
+        client.send(message);
+    }
+    saveDashboardState();
+}
+
+// ==========================================
+// 5. MOTOR LOAD SYSTEM
+// ==========================================
+function updateMotorLoad(status) {
+    const loadEl = document.getElementById('motorLoad');
+    if (!loadEl) return;
+
+    if (status.toString().toUpperCase() === 'OVERLOAD' || status.toString().toUpperCase() === 'HIGH' || status === true) {
+        loadEl.innerText = 'OVERLOAD';
+        loadEl.style.color = '#e74c3c';
+        addLog("Warning: Motor status is OVERLOAD!", "#e74c3c");
+    } else {
+        loadEl.innerText = 'NORMAL';
+        loadEl.style.color = '#27ae60';
+    }
+    saveDashboardState();
+}
+
+// ==========================================
+// 6. SAVE & LOAD LOCALSTORAGE DATA
+// ==========================================
 function saveDashboardState() {
     const getTxt = (id) => {
         const el = document.getElementById(id);
@@ -95,23 +247,9 @@ function loadSavedData() {
     renderWaterHistoryUI();
 }
 
-// --- 3. MOTOR LOAD SYSTEM ---
-function updateMotorLoad(status) {
-    const loadEl = document.getElementById('motorLoad');
-    if (!loadEl) return;
-
-    if (status.toUpperCase() === 'OVERLOAD' || status.toUpperCase() === 'HIGH' || status === true) {
-        loadEl.innerText = 'OVERLOAD';
-        loadEl.style.color = '#e74c3c';
-        addLog("Warning: Motor status is OVERLOAD!", "#e74c3c");
-    } else {
-        loadEl.innerText = 'NORMAL';
-        loadEl.style.color = '#27ae60';
-    }
-    saveDashboardState();
-}
-
-// --- 4. SYSTEM ACTIVITY LOG ---
+// ==========================================
+// 7. SYSTEM ACTIVITY LOG
+// ==========================================
 function addLog(actionText, color = '#27ae60') {
     const now = new Date();
     const day = now.getDate().toString().padStart(2, '0');
@@ -155,7 +293,9 @@ function renderSystemLogsUI() {
     logContainer.scrollTop = logContainer.scrollHeight;
 }
 
-// --- 5. WATER USAGE SUMMARY SYSTEM ---
+// ==========================================
+// 8. WATER USAGE SUMMARY SYSTEM (2 DAYS)
+// ==========================================
 let accumulatedWater = parseFloat(localStorage.getItem('accumulatedWater')) || 0;
 
 function updateWaterUsage(currentFlow) {
@@ -226,29 +366,4 @@ function renderWaterHistoryUI() {
         logEntry.innerHTML = `<span style="color: #2c3e50; font-weight: bold;">${parts[0]}</span> : <span class="water-badge">${parts[1].replace('សរុបការប្រើប្រាស់ទឹក = ', '')}</span>`;
         waterLogContainer.appendChild(logEntry);
     });
-}
-
-// --- 6. MQTT & BUTTON CONTROLS ---
-function connectToMQTT() {
-    addLog("Dashboard authorized and connected to HiveMQ Free Server.");
-}
-
-function pumpOn() {
-    const pump = document.getElementById('pump');
-    if (pump) {
-        pump.innerText = 'ON';
-        pump.style.color = '#2ecc71';
-    }
-    addLog("User activated START button.", "#2ecc71");
-    saveDashboardState();
-}
-
-function pumpOff() {
-    const pump = document.getElementById('pump');
-    if (pump) {
-        pump.innerText = 'OFF';
-        pump.style.color = '#95a5a6';
-    }
-    addLog("User activated STOP button.", "#e74c3c");
-    saveDashboardState();
 }
