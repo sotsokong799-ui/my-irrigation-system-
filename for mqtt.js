@@ -2,7 +2,6 @@
 // 1. CONFIGURATION & MQTT GLOBALS
 // ==========================================
 const MQTT_HOST = "broker.hivemq.com";
-const MQTT_PORT = 8000; // WebSocket Port សម្រាប់ Browser
 const MQTT_CLIENT_ID = "IrrigationDash_" + Math.random().toString(16).substr(2, 8);
 
 // MQTT Topics
@@ -64,16 +63,22 @@ window.onload = function() {
 };
 
 // ==========================================
-// 3. MQTT CONNECTION & HANDLING
+// 3. MQTT CONNECTION & HANDLING (FIXED PORT & SSL)
 // ==========================================
 function connectToMQTT() {
-    client = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), MQTT_CLIENT_ID);
+    // ឆែកមើលថា Web ដើរលើ HTTPS ឬ HTTP ដើម្បីជ្រើសរើស Port ឱ្យត្រូវ
+    const isHTTPS = window.location.protocol === 'https:';
+    const port = isHTTPS ? 8884 : 8000;
+
+    client = new Paho.MQTT.Client(MQTT_HOST, Number(port), MQTT_CLIENT_ID);
 
     client.onConnectionLost = onConnectionLost;
     client.onMessageArrived = onMessageArrived;
 
     const options = {
-        timeout: 3,
+        timeout: 5,
+        useSSL: isHTTPS, // ប្រើ SSL បើ Web ជា HTTPS
+        cleanSession: true,
         onSuccess: onConnect,
         onFailure: onConnectFailure
     };
