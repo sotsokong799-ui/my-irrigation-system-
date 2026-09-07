@@ -2,9 +2,17 @@
 <html lang="km">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>IoT Irrigation System - Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+
+    <!-- Prevent Browser Caching (ដោះស្រាយបញ្ហា Mobile បង្ហាញទិន្នន័យចាស់) -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <!-- CSS with Versioning -->
+    <link rel="stylesheet" href="style.css?v=1.2">
+    
     <!-- MQTT Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
 </head>
@@ -106,6 +114,7 @@
 
     </div>
 
-    <script src="for mqtt.js"></script> 
+    <!-- JavaScript with Versioning -->
+    <script src="for mqtt.js?v=1.2"></script> 
 </body>
 </html>
