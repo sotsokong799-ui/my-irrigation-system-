@@ -6,7 +6,6 @@
 }
 
 body {
-    /* ប្រើ Link ផ្ទាល់ពី Postimages */
     background-image: url('https://i.postimg.cc/qq0vYv02/photo-2026-07-24-16-56-45.jpg');
     background-size: cover;
     background-position: center;
@@ -19,9 +18,9 @@ body {
 /* --- Login Form Styling --- */
 #loginContainer {
     max-width: 400px;
-    margin: 100px auto;
+    margin: 80px auto;
     padding: 30px;
-    background: rgba(255, 255, 255, 0.95); /* ពណ៌សថ្លាល្មម */
+    background: rgba(255, 255, 255, 0.95);
     border-radius: 12px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.25);
     text-align: center;
@@ -107,7 +106,7 @@ body {
     opacity: 0.9;
 }
 
-/* --- Container & Grid --- */
+/* --- Container & Responsive Grid --- */
 .container {
     max-width: 1100px;
     margin: 0 auto;
@@ -116,31 +115,13 @@ body {
 
 .card-grid {
     display: grid !important;
-    grid-template-columns: repeat(5, 1fr) !important;
+    grid-template-columns: repeat(3, 1fr) !important; /* បង្ហាញ 3 Columns លើ Desktop ឱ្យសមរម្យ */
     gap: 20px;
     margin-bottom: 35px;
 }
 
-@media (max-width: 992px) {
-    .card-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-    }
-}
-
-@media (max-width: 600px) {
-    .header {
-        flex-direction: column;
-        gap: 10px;
-        text-align: center;
-    }
-    
-    .card-grid {
-        grid-template-columns: repeat(1, 1fr) !important;
-    }
-}
-
 .card {
-    background: rgba(255, 255, 255, 0.9); /* ពណ៌សថ្លារលោង */
+    background: rgba(255, 255, 255, 0.9);
     border-radius: 10px;
     padding: 25px 15px;
     text-align: center;
@@ -156,7 +137,7 @@ body {
 .card h3 {
     font-size: 0.95rem;
     color: #111;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     font-weight: 700;
 }
 
@@ -223,6 +204,7 @@ body {
 .history-header h2 {
     font-size: 1.1rem;
     color: #2c3e50;
+    text-align: center;
 }
 
 .history-box {
@@ -234,6 +216,7 @@ body {
     font-size: 0.9rem;
     max-height: 200px;
     overflow-y: auto;
+    overflow-x: auto; /* អនុញ្ញាតឱ្យ Scroll ផ្តេកលើ Mobile បើកូដវែង */
 }
 
 .log-item { margin-bottom: 6px; }
@@ -253,4 +236,42 @@ body {
     padding: 2px 8px;
     border-radius: 4px;
     font-weight: bold;
+}
+
+/* --- Media Queries (សម្រាប់អេក្រង់តូច/Mobile) --- */
+@media (max-width: 992px) {
+    .card-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 600px) {
+    #loginContainer {
+        width: 90%;
+        margin: 50px auto;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+        padding: 15px;
+    }
+
+    .header-title h1 {
+        font-size: 1.4rem;
+    }
+
+    .card-grid {
+        grid-template-columns: repeat(1, 1fr) !important; /* បង្ហាញ ១ជួរលើ Mobile */
+        gap: 15px;
+    }
+
+    .button-group {
+        width: 100%;
+    }
+
+    .btn {
+        width: 100%; /* ប៊ូតុងពង្រីកពេញអេក្រង់ទូរស័ព្ទ */
+    }
 }
