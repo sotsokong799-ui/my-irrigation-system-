@@ -7,7 +7,7 @@ const MQTT_USER = "MyMQTT";
 const MQTT_PASS = "29072003Sot";
 const MQTT_CLIENT_ID = "IrrigationDash_" + Math.random().toString(16).substr(2, 8);
 
-// MQTT Topics matching ESP32-S3 Firmware
+// MQTT Topics matching ESP32 Firmware
 const TOPIC_PUMP_CONTROL = "irrigation/pump/control";
 const TOPIC_PUMP_STATUS  = "irrigation/pump/status";
 const TOPIC_SENSOR_DATA  = "irrigation/sensors/data";
@@ -54,7 +54,6 @@ function logout() {
     if (dashBox) dashBox.style.display = 'none';
 }
 
-// មុខងារទារ Password ជានិច្ចរាល់ពេលបើក ឬ Refresh Web
 window.onload = function() {
     localStorage.removeItem('isLoggedIn');
     
@@ -76,7 +75,7 @@ function connectToMQTT() {
 
     const options = {
         timeout: 10,
-        useSSL: true,         // HiveMQ Cloud ទាមទារ SSL/TLS ជានិច្ច
+        useSSL: true,         
         userName: MQTT_USER,
         password: MQTT_PASS,
         cleanSession: true,
@@ -89,7 +88,6 @@ function connectToMQTT() {
 
 function onConnect() {
     addLog("Connected to HiveMQ Cloud Broker via WebSockets.", "#27ae60");
-    // Subscribe ទៅកាន់ Topics ដើម្បីទទួលទិន្នន័យពី ESP32-S3
     client.subscribe(TOPIC_PUMP_STATUS);
     client.subscribe(TOPIC_SENSOR_DATA);
 }
@@ -108,7 +106,7 @@ function onMessageArrived(message) {
     const topic = message.destinationName;
     const payload = message.payloadString;
 
-    // 1. ទទួលស្ថានភាព Pump ពី ESP32 (ទោះជាចុចលើ Web ឬ Screen HMI)
+    // 1. ទទួលស្ថានភាព Pump ពី ESP32
     if (topic === TOPIC_PUMP_STATUS) {
         const pumpEl = document.getElementById('pump');
         if (pumpEl) {
@@ -119,12 +117,12 @@ function onMessageArrived(message) {
         saveDashboardState();
     }
 
-    // 2. ទទួលទិន្នន័យ Sensors (JSON) ពី ESP32-S3
+    // 2. ទទួលទិន្នន័យ Sensors (JSON) ពី ESP32
     if (topic === TOPIC_SENSOR_DATA) {
         try {
             const data = JSON.parse(payload);
 
-            // អាន AC / DC Current
+            // AC / DC Current
             const acCur = data.ac_current !== undefined ? data.ac_current : data.acCurrent;
             if (acCur !== undefined && document.getElementById('acCurrent')) 
                 document.getElementById('acCurrent').innerText = `${parseFloat(acCur).toFixed(2)} A`;
@@ -133,7 +131,7 @@ function onMessageArrived(message) {
             if (dcCur !== undefined && document.getElementById('dcCurrent')) 
                 document.getElementById('dcCurrent').innerText = `${parseFloat(dcCur).toFixed(2)} A`;
 
-            // អាន AC / DC Voltage
+            // AC / DC Voltage
             const dcV = data.dc_voltage !== undefined ? data.dc_voltage : data.dcVolt;
             if (dcV !== undefined && document.getElementById('Volt')) 
                 document.getElementById('Volt').innerText = `${parseFloat(dcV).toFixed(1)} V`;
@@ -142,12 +140,12 @@ function onMessageArrived(message) {
             if (acV !== undefined && document.getElementById('volt')) 
                 document.getElementById('volt').innerText = `${parseFloat(acV).toFixed(1)} V`;
 
-            // អាន Tank Level
+            // Tank Level
             const tankLvl = data.tank_level !== undefined ? data.tank_level : data.tank;
             if (tankLvl !== undefined && document.getElementById('tank')) 
                 document.getElementById('tank').innerText = tankLvl;
             
-            // អាន Water Flow គ្រប់ទម្រង់ Key របស់ ESP32
+            // Water Flow
             const flowVal = data.water_flow !== undefined ? data.water_flow : 
                            (data.waterFlow !== undefined ? data.waterFlow : 
                            (data.water_volume !== undefined ? data.water_volume : data.flow));
@@ -156,7 +154,7 @@ function onMessageArrived(message) {
                 updateWaterUsage(parseFloat(flowVal));
             }
 
-            // អាន Motor Load
+            // Motor Load
             const mLoad = data.motor_load !== undefined ? data.motor_load : data.motorLoad;
             if (mLoad !== undefined) {
                 updateMotorLoad(mLoad);
@@ -324,13 +322,13 @@ function renderSystemLogsUI() {
 // ==========================================
 // 8. WATER USAGE SUMMARY SYSTEM (2 DAYS)
 // ==========================================
-let accumulatedWater = parseFloat(localStorage.getItem('accumulatedWater')) || 0;
-
 function updateWaterUsage(currentFlow) {
+    // បង្ហាញតម្លៃបច្ចុប្បន្នផ្ទាល់ពី ESP32 Sensor
     const flowEl = document.getElementById('flow');
     if (flowEl) flowEl.innerText = `${currentFlow.toFixed(1)} m³`;
 
-    accumulatedWater += currentFlow;
+    // រក្សាទុកទិន្នន័យបច្ចុប្បន្នសម្រាប់ Summary Log
+    let accumulatedWater = currentFlow;
     localStorage.setItem('accumulatedWater', accumulatedWater);
 
     const now = new Date();
@@ -345,8 +343,6 @@ function updateWaterUsage(currentFlow) {
         if (diffInDays >= 2) {
             saveAndShowWaterLog(lastResetDate, now, accumulatedWater);
             localStorage.setItem('lastWaterResetDate', now.toISOString());
-            accumulatedWater = 0;
-            localStorage.setItem('accumulatedWater', 0);
         }
     }
     saveDashboardState();
