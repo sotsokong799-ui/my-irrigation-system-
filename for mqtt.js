@@ -123,23 +123,45 @@ function onMessageArrived(message) {
     if (topic === TOPIC_SENSOR_DATA) {
         try {
             const data = JSON.parse(payload);
-            if (data.acCurrent !== undefined && document.getElementById('acCurrent')) 
-                document.getElementById('acCurrent').innerText = `${parseFloat(data.acCurrent).toFixed(2)} A`;
-            if (data.dcCurrent !== undefined && document.getElementById('dcCurrent')) 
-                document.getElementById('dcCurrent').innerText = `${parseFloat(data.dcCurrent).toFixed(2)} A`;
-            if (data.dcVolt !== undefined && document.getElementById('Volt')) 
-                document.getElementById('Volt').innerText = `${parseFloat(data.dcVolt).toFixed(1)} V`;
-            if (data.acVolt !== undefined && document.getElementById('volt')) 
-                document.getElementById('volt').innerText = `${parseFloat(data.acVolt).toFixed(1)} V`;
-            if (data.tank !== undefined && document.getElementById('tank')) 
-                document.getElementById('tank').innerText = data.tank;
+
+            // អាន AC / DC Current
+            const acCur = data.ac_current !== undefined ? data.ac_current : data.acCurrent;
+            if (acCur !== undefined && document.getElementById('acCurrent')) 
+                document.getElementById('acCurrent').innerText = `${parseFloat(acCur).toFixed(2)} A`;
+
+            const dcCur = data.dc_current !== undefined ? data.dc_current : data.dcCurrent;
+            if (dcCur !== undefined && document.getElementById('dcCurrent')) 
+                document.getElementById('dcCurrent').innerText = `${parseFloat(dcCur).toFixed(2)} A`;
+
+            // អាន AC / DC Voltage
+            const dcV = data.dc_voltage !== undefined ? data.dc_voltage : data.dcVolt;
+            if (dcV !== undefined && document.getElementById('Volt')) 
+                document.getElementById('Volt').innerText = `${parseFloat(dcV).toFixed(1)} V`;
+
+            const acV = data.ac_voltage !== undefined ? data.ac_voltage : data.acVolt;
+            if (acV !== undefined && document.getElementById('volt')) 
+                document.getElementById('volt').innerText = `${parseFloat(acV).toFixed(1)} V`;
+
+            // អាន Tank Level
+            const tankLvl = data.tank_level !== undefined ? data.tank_level : data.tank;
+            if (tankLvl !== undefined && document.getElementById('tank')) 
+                document.getElementById('tank').innerText = tankLvl;
             
-            if (data.flow !== undefined) {
-                updateWaterUsage(parseFloat(data.flow));
+            // អាន Water Flow គ្រប់ទម្រង់ Key របស់ ESP32
+            const flowVal = data.water_flow !== undefined ? data.water_flow : 
+                           (data.waterFlow !== undefined ? data.waterFlow : 
+                           (data.water_volume !== undefined ? data.water_volume : data.flow));
+                           
+            if (flowVal !== undefined) {
+                updateWaterUsage(parseFloat(flowVal));
             }
-            if (data.motorLoad !== undefined) {
-                updateMotorLoad(data.motorLoad);
+
+            // អាន Motor Load
+            const mLoad = data.motor_load !== undefined ? data.motor_load : data.motorLoad;
+            if (mLoad !== undefined) {
+                updateMotorLoad(mLoad);
             }
+
             saveDashboardState();
         } catch (e) {
             console.error("Invalid Sensor JSON received:", payload);
