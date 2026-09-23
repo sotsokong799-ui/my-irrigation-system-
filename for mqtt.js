@@ -1,5 +1,5 @@
 // ==========================================
-// 1. CONFIGURATION & MQTT GLOBALS (HIVEMQ CLOUD)
+// CONFIGURATION & MQTT GLOBALS
 // ==========================================
 const MQTT_HOST = "4a8939aca73049848878fb5e2c8c332c.s1.eu.hivemq.cloud";
 const MQTT_PORT = 8884;
@@ -14,26 +14,7 @@ const TOPIC_SENSOR_DATA  = "irrigation/sensors/data";
 let client = null;
 
 // ==========================================
-// 2. MODAL POPUP CONTROLS
-// ==========================================
-function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.style.display = "block";
-}
-
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.style.display = "none";
-}
-
-window.onclick = function(event) {
-    if (event.target.classList.contains('modal')) {
-        event.target.style.display = "none";
-    }
-};
-
-// ==========================================
-// 3. LOGIN & AUTHENTICATION
+// LOGIN & AUTHENTICATION
 // ==========================================
 function checkPassword() {
     const passwordInput = document.getElementById('passwordInput');
@@ -65,7 +46,7 @@ window.onload = function() {
 };
 
 // ==========================================
-// 4. MQTT CONNECTION
+// MQTT CONNECTION
 // ==========================================
 function connectToMQTT() {
     client = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), MQTT_CLIENT_ID);
@@ -86,7 +67,7 @@ function connectToMQTT() {
 }
 
 function onConnect() {
-    addLog("Connected to HiveMQ Cloud Broker via WebSockets.", "#27ae60");
+    addLog("Dashboard authorized and connected to HiveMQ Free Server.", "#27ae60");
     client.subscribe(TOPIC_PUMP_STATUS);
     client.subscribe(TOPIC_SENSOR_DATA);
 }
@@ -135,23 +116,16 @@ function onMessageArrived(message) {
             if (acV !== undefined && document.getElementById('volt')) 
                 document.getElementById('volt').innerText = `${parseFloat(acV).toFixed(1)} V`;
 
-            // --- AC Power Calculation ---
+            // Calculate & Display AC/DC Power
             let acP = data.ac_power !== undefined ? data.ac_power : data.acPower;
-            if (acP === undefined && acV !== undefined && acCur !== undefined) {
-                acP = parseFloat(acV) * parseFloat(acCur);
-            }
-            if (acP !== undefined && document.getElementById('acPower')) {
+            if (acP === undefined && acV !== undefined && acCur !== undefined) acP = parseFloat(acV) * parseFloat(acCur);
+            if (acP !== undefined && document.getElementById('acPower')) 
                 document.getElementById('acPower').innerText = `${parseFloat(acP).toFixed(2)} W`;
-            }
 
-            // --- DC Power Calculation ---
             let dcP = data.dc_power !== undefined ? data.dc_power : data.dcPower;
-            if (dcP === undefined && dcV !== undefined && dcCur !== undefined) {
-                dcP = parseFloat(dcV) * parseFloat(dcCur);
-            }
-            if (dcP !== undefined && document.getElementById('dcPower')) {
+            if (dcP === undefined && dcV !== undefined && dcCur !== undefined) dcP = parseFloat(dcV) * parseFloat(dcCur);
+            if (dcP !== undefined && document.getElementById('dcPower')) 
                 document.getElementById('dcPower').innerText = `${parseFloat(dcP).toFixed(2)} W`;
-            }
 
             const tankLvl = data.tank_level !== undefined ? data.tank_level : data.tank;
             if (tankLvl !== undefined && document.getElementById('tank')) 
@@ -163,7 +137,7 @@ function onMessageArrived(message) {
             const mLoad = data.motor_load !== undefined ? data.motor_load : data.motorLoad;
             if (mLoad !== undefined) updateMotorLoad(mLoad);
 
-            // បញ្ជូនទិន្នន័យអគ្គិសនីរួមទាំង Power ទៅ Record ក្នុង Electrical Log
+            // Record Electrical History Log
             if (acCur !== undefined && dcCur !== undefined && acV !== undefined && dcV !== undefined) {
                 addElectricalLogDaily(acCur, dcCur, acV, dcV, acP || 0, dcP || 0);
             }
@@ -176,7 +150,7 @@ function onMessageArrived(message) {
 }
 
 // ==========================================
-// 5. BUTTON CONTROLS
+// CONTROLS & LOGGING FUNCTIONS
 // ==========================================
 function pumpOn() {
     const pump = document.getElementById('pump');
@@ -225,16 +199,14 @@ function updateMotorLoad(status) {
     saveDashboardState();
 }
 
-// ==========================================
-// 6. LOGGING SYSTEMS
-// ==========================================
+// ELECTRICAL HISTORY LOG (AC/DC Voltage, Current & Power)
 function addElectricalLogDaily(acCur, dcCur, acVolt, dcVolt, acPower, dcPower) {
     const now = new Date();
     const day = now.getDate().toString().padStart(2, '0');
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
     const year = now.getFullYear();
     const todayStr = `${day}/${month}/${year}`;
-    const timeStr = `[${todayStr} - ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}]`;
+    const timeStr = `[${todayStr} - ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
 
     const logData = {
         time: timeStr,
@@ -270,7 +242,7 @@ function renderElectricalLogsUI() {
     let elecLogs = JSON.parse(localStorage.getItem('electricalHistoryLogs')) || [];
 
     if (elecLogs.length === 0) {
-        container.innerHTML = `<div style="color: #888; text-align: center; padding: 10px;">No daily electrical log recorded yet.</div>`;
+        container.innerHTML = `<div class="empty-log">No daily electrical log recorded yet.</div>`;
         return;
     }
 
@@ -278,15 +250,13 @@ function renderElectricalLogsUI() {
     elecLogs.forEach(log => {
         const item = document.createElement('div');
         item.className = 'log-item';
-        item.style.padding = "8px 0";
+        item.style.padding = "6px 0";
         item.style.borderBottom = "1px solid #eee";
         
         item.innerHTML = `
-            <div style="color: #7f8c8d; font-weight: bold; margin-bottom: 3px;">${log.time}</div>
-            <div style="margin-left: 10px;">
-                ➔ <span style="color: #2196F3;">AC: <b>${log.acVolt}V / ${log.acCur}A</b> (${log.acPower || '0.00'}W)</span><br>
-                ➔ <span style="color: #27ae60;">DC: <b>${log.dcVolt}V / ${log.dcCur}A</b> (${log.dcPower || '0.00'}W)</span>
-            </div>
+            <span style="color: #7f8c8d; font-weight: bold;">${log.time}</span> ➔ 
+            <span style="color: #2196F3;">AC: <b>${log.acVolt}V / ${log.acCur}A / ${log.acPower}W</b></span> | 
+            <span style="color: #27ae60;">DC: <b>${log.dcVolt}V / ${log.dcCur}A / ${log.dcPower}W</b></span>
         `;
         container.appendChild(item);
     });
@@ -311,7 +281,7 @@ function renderSystemLogsUI() {
     let systemLogs = JSON.parse(localStorage.getItem('systemLogsHistory')) || [];
 
     if (systemLogs.length === 0) {
-        container.innerHTML = `<div style="color: #888; text-align: center;">No activity recorded yet.</div>`;
+        container.innerHTML = `<div class="empty-log">No activity recorded yet.</div>`;
         return;
     }
 
@@ -360,7 +330,7 @@ function renderWaterHistoryUI() {
     let waterHistory = JSON.parse(localStorage.getItem('waterHistoryLogs')) || [];
 
     if (waterHistory.length === 0) {
-        container.innerHTML = `<div style="color: #888; text-align: center;">មិនទាន់មានទិន្នន័យបូកសរុបនៅឡើយទេ។</div>`;
+        container.innerHTML = `<div class="empty-log">មិនទាន់មានទិន្នន័យបូកសរុបនៅឡើយទេ។</div>`;
         return;
     }
 
@@ -374,7 +344,7 @@ function renderWaterHistoryUI() {
 }
 
 // ==========================================
-// 7. SAVE & LOAD STATE
+// SAVE & LOAD STATE
 // ==========================================
 function saveDashboardState() {
     const getTxt = (id) => document.getElementById(id) ? document.getElementById(id).innerText : '';
