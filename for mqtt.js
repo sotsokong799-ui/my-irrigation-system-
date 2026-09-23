@@ -135,7 +135,7 @@ function onMessageArrived(message) {
             if (acV !== undefined && document.getElementById('volt')) 
                 document.getElementById('volt').innerText = `${parseFloat(acV).toFixed(1)} V`;
 
-            // --- គណនា ឬទទួលតម្លៃ AC Power ---
+            // --- AC Power Calculation ---
             let acP = data.ac_power !== undefined ? data.ac_power : data.acPower;
             if (acP === undefined && acV !== undefined && acCur !== undefined) {
                 acP = parseFloat(acV) * parseFloat(acCur);
@@ -144,7 +144,7 @@ function onMessageArrived(message) {
                 document.getElementById('acPower').innerText = `${parseFloat(acP).toFixed(2)} W`;
             }
 
-            // --- គណនា ឬទទួលតម្លៃ DC Power ---
+            // --- DC Power Calculation ---
             let dcP = data.dc_power !== undefined ? data.dc_power : data.dcPower;
             if (dcP === undefined && dcV !== undefined && dcCur !== undefined) {
                 dcP = parseFloat(dcV) * parseFloat(dcCur);
@@ -163,7 +163,7 @@ function onMessageArrived(message) {
             const mLoad = data.motor_load !== undefined ? data.motor_load : data.motorLoad;
             if (mLoad !== undefined) updateMotorLoad(mLoad);
 
-            // បញ្ជូនទិន្នន័យរួមទាំង Power ទៅរក្សាទុកក្នុង Electrical Log
+            // បញ្ជូនទិន្នន័យអគ្គិសនីរួមទាំង Power ទៅ Record ក្នុង Electrical Log
             if (acCur !== undefined && dcCur !== undefined && acV !== undefined && dcV !== undefined) {
                 addElectricalLogDaily(acCur, dcCur, acV, dcV, acP || 0, dcP || 0);
             }
@@ -226,7 +226,7 @@ function updateMotorLoad(status) {
 }
 
 // ==========================================
-// 6. LOGGING SYSTEMS (WITH POWER INCLUDED)
+// 6. LOGGING SYSTEMS
 // ==========================================
 function addElectricalLogDaily(acCur, dcCur, acVolt, dcVolt, acPower, dcPower) {
     const now = new Date();
@@ -248,13 +248,11 @@ function addElectricalLogDaily(acCur, dcCur, acVolt, dcVolt, acPower, dcPower) {
 
     let elecLogs = JSON.parse(localStorage.getItem('electricalHistoryLogs')) || [];
 
-    // ប្រសិនបើជាថ្ងៃថ្មី ធ្វើការបន្ថែម Log ថ្មីមួយទៀត
     if (localStorage.getItem('lastElecSavedDate') !== todayStr) {
         elecLogs.unshift(logData);
         if (elecLogs.length > 30) elecLogs.pop();
         localStorage.setItem('lastElecSavedDate', todayStr);
     } else {
-        // ប្រសិនបើជាថ្ងៃដដែល ធ្វើបច្ចុប្បន្នភាពទិន្នន័យចុងក្រោយឱ្យមានតម្លៃ Power ភ្លាមៗ
         if (elecLogs.length > 0) {
             elecLogs[0] = logData;
         } else {
