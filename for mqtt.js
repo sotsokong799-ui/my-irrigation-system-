@@ -2,12 +2,11 @@
 // 1. CONFIGURATION & MQTT GLOBALS (HIVEMQ CLOUD)
 // ==========================================
 const MQTT_HOST = "4a8939aca73049848878fb5e2c8c332c.s1.eu.hivemq.cloud";
-const MQTT_PORT = 8884; // WebSocket Port សម្រាប់ HiveMQ Cloud SSL/TLS
+const MQTT_PORT = 8884;
 const MQTT_USER = "MyMQTT";
 const MQTT_PASS = "29072003Sot";
 const MQTT_CLIENT_ID = "IrrigationDash_" + Math.random().toString(16).substr(2, 8);
 
-// MQTT Topics matching ESP32 Firmware
 const TOPIC_PUMP_CONTROL = "irrigation/pump/control";
 const TOPIC_PUMP_STATUS  = "irrigation/pump/status";
 const TOPIC_SENSOR_DATA  = "irrigation/sensors/data";
@@ -15,24 +14,34 @@ const TOPIC_SENSOR_DATA  = "irrigation/sensors/data";
 let client = null;
 
 // ==========================================
-// 2. LOGIN SYSTEM
+// 2. MODAL POPUP CONTROLS
+// ==========================================
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.style.display = "block";
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.style.display = "none";
+}
+
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = "none";
+    }
+};
+
+// ==========================================
+// 3. LOGIN & AUTHENTICATION
 // ==========================================
 function checkPassword() {
     const passwordInput = document.getElementById('passwordInput');
     const errorMsg = document.getElementById('errorMessage');
     
-    if (!passwordInput) return;
-
-    const passwordEntered = passwordInput.value;
-    const correctPassword = "10112003"; 
-
-    if (passwordEntered === correctPassword) {
-        const loginBox = document.getElementById('loginContainer');
-        const dashBox = document.getElementById('dashboardContainer');
-
-        if (loginBox) loginBox.style.display = 'none';
-        if (dashBox) dashBox.style.display = 'block';
-        
+    if (passwordInput && passwordInput.value === "10112003") {
+        document.getElementById('loginContainer').style.display = 'none';
+        document.getElementById('dashboardContainer').style.display = 'block';
         localStorage.setItem('isLoggedIn', 'true');
         
         connectToMQTT();
@@ -44,32 +53,22 @@ function checkPassword() {
 
 function logout() {
     localStorage.removeItem('isLoggedIn');
-    if (client && client.isConnected()) {
-        client.disconnect();
-    }
-    const loginBox = document.getElementById('loginContainer');
-    const dashBox = document.getElementById('dashboardContainer');
-
-    if (loginBox) loginBox.style.display = 'block';
-    if (dashBox) dashBox.style.display = 'none';
+    if (client && client.isConnected()) client.disconnect();
+    document.getElementById('loginContainer').style.display = 'block';
+    document.getElementById('dashboardContainer').style.display = 'none';
 }
 
 window.onload = function() {
     localStorage.removeItem('isLoggedIn');
-    
-    const loginBox = document.getElementById('loginContainer');
-    const dashBox = document.getElementById('dashboardContainer');
-
-    if (loginBox) loginBox.style.display = 'block';
-    if (dashBox) dashBox.style.display = 'none';
+    document.getElementById('loginContainer').style.display = 'block';
+    document.getElementById('dashboardContainer').style.display = 'none';
 };
 
 // ==========================================
-// 3. MQTT CONNECTION & HANDLING
+// 4. MQTT CONNECTION
 // ==========================================
 function connectToMQTT() {
     client = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), MQTT_CLIENT_ID);
-
     client.onConnectionLost = onConnectionLost;
     client.onMessageArrived = onMessageArrived;
 
@@ -106,7 +105,6 @@ function onMessageArrived(message) {
     const topic = message.destinationName;
     const payload = message.payloadString;
 
-    // 1. ទទួលស្ថានភាព Pump ពី ESP32
     if (topic === TOPIC_PUMP_STATUS) {
         const pumpEl = document.getElementById('pump');
         if (pumpEl) {
@@ -117,12 +115,10 @@ function onMessageArrived(message) {
         saveDashboardState();
     }
 
-    // 2. ទទួលទិន្នន័យ Sensors (JSON) ពី ESP32
     if (topic === TOPIC_SENSOR_DATA) {
         try {
             const data = JSON.parse(payload);
 
-            // AC / DC Current
             const acCur = data.ac_current !== undefined ? data.ac_current : data.acCurrent;
             if (acCur !== undefined && document.getElementById('acCurrent')) 
                 document.getElementById('acCurrent').innerText = `${parseFloat(acCur).toFixed(2)} A`;
@@ -131,7 +127,6 @@ function onMessageArrived(message) {
             if (dcCur !== undefined && document.getElementById('dcCurrent')) 
                 document.getElementById('dcCurrent').innerText = `${parseFloat(dcCur).toFixed(2)} A`;
 
-            // AC / DC Voltage
             const dcV = data.dc_voltage !== undefined ? data.dc_voltage : data.dcVolt;
             if (dcV !== undefined && document.getElementById('Volt')) 
                 document.getElementById('Volt').innerText = `${parseFloat(dcV).toFixed(1)} V`;
@@ -140,35 +135,48 @@ function onMessageArrived(message) {
             if (acV !== undefined && document.getElementById('volt')) 
                 document.getElementById('volt').innerText = `${parseFloat(acV).toFixed(1)} V`;
 
-            // Tank Level
+            // --- គណនា ឬទទួលតម្លៃ AC Power ---
+            let acP = data.ac_power !== undefined ? data.ac_power : data.acPower;
+            if (acP === undefined && acV !== undefined && acCur !== undefined) {
+                acP = parseFloat(acV) * parseFloat(acCur);
+            }
+            if (acP !== undefined && document.getElementById('acPower')) {
+                document.getElementById('acPower').innerText = `${parseFloat(acP).toFixed(2)} W`;
+            }
+
+            // --- គណនា ឬទទួលតម្លៃ DC Power ---
+            let dcP = data.dc_power !== undefined ? data.dc_power : data.dcPower;
+            if (dcP === undefined && dcV !== undefined && dcCur !== undefined) {
+                dcP = parseFloat(dcV) * parseFloat(dcCur);
+            }
+            if (dcP !== undefined && document.getElementById('dcPower')) {
+                document.getElementById('dcPower').innerText = `${parseFloat(dcP).toFixed(2)} W`;
+            }
+
             const tankLvl = data.tank_level !== undefined ? data.tank_level : data.tank;
             if (tankLvl !== undefined && document.getElementById('tank')) 
                 document.getElementById('tank').innerText = tankLvl;
             
-            // Water Flow
-            const flowVal = data.water_flow !== undefined ? data.water_flow : 
-                           (data.waterFlow !== undefined ? data.waterFlow : 
-                           (data.water_volume !== undefined ? data.water_volume : data.flow));
-                           
-            if (flowVal !== undefined) {
-                updateWaterUsage(parseFloat(flowVal));
-            }
+            const flowVal = data.water_flow !== undefined ? data.water_flow : (data.waterFlow !== undefined ? data.waterFlow : data.flow);
+            if (flowVal !== undefined) updateWaterUsage(parseFloat(flowVal));
 
-            // Motor Load
             const mLoad = data.motor_load !== undefined ? data.motor_load : data.motorLoad;
-            if (mLoad !== undefined) {
-                updateMotorLoad(mLoad);
+            if (mLoad !== undefined) updateMotorLoad(mLoad);
+
+            // បញ្ជូនទិន្នន័យរួមទាំង Power ទៅរក្សាទុកក្នុង Electrical Log
+            if (acCur !== undefined && dcCur !== undefined && acV !== undefined && dcV !== undefined) {
+                addElectricalLogDaily(acCur, dcCur, acV, dcV, acP || 0, dcP || 0);
             }
 
             saveDashboardState();
         } catch (e) {
-            console.error("Invalid Sensor JSON received:", payload);
+            console.error("Invalid JSON:", payload);
         }
     }
 }
 
 // ==========================================
-// 4. BUTTON CONTROLS (START / STOP)
+// 5. BUTTON CONTROLS
 // ==========================================
 function pumpOn() {
     const pump = document.getElementById('pump');
@@ -202,14 +210,11 @@ function pumpOff() {
     saveDashboardState();
 }
 
-// ==========================================
-// 5. MOTOR LOAD SYSTEM
-// ==========================================
 function updateMotorLoad(status) {
     const loadEl = document.getElementById('motorLoad');
     if (!loadEl) return;
 
-    if (status.toString().toUpperCase() === 'OVERLOAD' || status.toString().toUpperCase() === 'HIGH' || status === true) {
+    if (status.toString().toUpperCase() === 'OVERLOAD' || status === true) {
         loadEl.innerText = 'OVERLOAD';
         loadEl.style.color = '#e74c3c';
         addLog("Warning: Motor status is OVERLOAD!", "#e74c3c");
@@ -221,76 +226,81 @@ function updateMotorLoad(status) {
 }
 
 // ==========================================
-// 6. SAVE & LOAD LOCALSTORAGE DATA
+// 6. LOGGING SYSTEMS (WITH POWER INCLUDED)
 // ==========================================
-function saveDashboardState() {
-    const getTxt = (id) => {
-        const el = document.getElementById(id);
-        return el ? el.innerText : '';
-    };
-
-    const loadEl = document.getElementById('motorLoad');
-
-    const state = {
-        acCurrent: getTxt('acCurrent'),
-        dcCurrent: getTxt('dcCurrent'),
-        dcVolt: getTxt('Volt'),
-        acVolt: getTxt('volt'),
-        tank: getTxt('tank'),
-        flow: getTxt('flow'),
-        pump: getTxt('pump'),
-        pumpColor: document.getElementById('pump') ? document.getElementById('pump').style.color : '',
-        motorLoad: getTxt('motorLoad'),
-        motorLoadColor: loadEl ? loadEl.style.color : ''
-    };
-    localStorage.setItem('dashboardState', JSON.stringify(state));
-}
-
-function loadSavedData() {
-    const savedState = JSON.parse(localStorage.getItem('dashboardState'));
-    if (savedState) {
-        if (document.getElementById('acCurrent')) document.getElementById('acCurrent').innerText = savedState.acCurrent || '0.00 A';
-        if (document.getElementById('dcCurrent')) document.getElementById('dcCurrent').innerText = savedState.dcCurrent || '0.00 A';
-        if (document.getElementById('Volt')) document.getElementById('Volt').innerText = savedState.dcVolt || '0.0 V';
-        if (document.getElementById('volt')) document.getElementById('volt').innerText = savedState.acVolt || '0.0 V';
-        if (document.getElementById('tank')) document.getElementById('tank').innerText = savedState.tank || 'LOW';
-        if (document.getElementById('flow')) document.getElementById('flow').innerText = savedState.flow || '0.0 m³';
-        
-        const pump = document.getElementById('pump');
-        if (pump) {
-            pump.innerText = savedState.pump || 'OFF';
-            pump.style.color = savedState.pumpColor || '#95a5a6';
-        }
-
-        const loadEl = document.getElementById('motorLoad');
-        if (loadEl) {
-            loadEl.innerText = savedState.motorLoad || 'NORMAL';
-            loadEl.style.color = savedState.motorLoadColor || '#27ae60';
-        }
-    }
-
-    renderSystemLogsUI();
-    renderWaterHistoryUI();
-}
-
-// ==========================================
-// 7. SYSTEM ACTIVITY LOG
-// ==========================================
-function addLog(actionText, color = '#27ae60') {
+function addElectricalLogDaily(acCur, dcCur, acVolt, dcVolt, acPower, dcPower) {
     const now = new Date();
     const day = now.getDate().toString().padStart(2, '0');
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
     const year = now.getFullYear();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const todayStr = `${day}/${month}/${year}`;
+    const timeStr = `[${todayStr} - ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}]`;
 
-    const timeString = `[${day}/${month}/${year} - ${hours}:${minutes}:${seconds}]`;
+    const logData = {
+        time: timeStr,
+        acCur: parseFloat(acCur).toFixed(2),
+        dcCur: parseFloat(dcCur).toFixed(2),
+        acVolt: parseFloat(acVolt).toFixed(1),
+        dcVolt: parseFloat(dcVolt).toFixed(1),
+        acPower: parseFloat(acPower).toFixed(2),
+        dcPower: parseFloat(dcPower).toFixed(2)
+    };
+
+    let elecLogs = JSON.parse(localStorage.getItem('electricalHistoryLogs')) || [];
+
+    // ប្រសិនបើជាថ្ងៃថ្មី ធ្វើការបន្ថែម Log ថ្មីមួយទៀត
+    if (localStorage.getItem('lastElecSavedDate') !== todayStr) {
+        elecLogs.unshift(logData);
+        if (elecLogs.length > 30) elecLogs.pop();
+        localStorage.setItem('lastElecSavedDate', todayStr);
+    } else {
+        // ប្រសិនបើជាថ្ងៃដដែល ធ្វើបច្ចុប្បន្នភាពទិន្នន័យចុងក្រោយឱ្យមានតម្លៃ Power ភ្លាមៗ
+        if (elecLogs.length > 0) {
+            elecLogs[0] = logData;
+        } else {
+            elecLogs.unshift(logData);
+        }
+    }
+
+    localStorage.setItem('electricalHistoryLogs', JSON.stringify(elecLogs));
+    renderElectricalLogsUI();
+}
+
+function renderElectricalLogsUI() {
+    const container = document.getElementById('electricalHistoryLog');
+    if (!container) return;
+    let elecLogs = JSON.parse(localStorage.getItem('electricalHistoryLogs')) || [];
+
+    if (elecLogs.length === 0) {
+        container.innerHTML = `<div style="color: #888; text-align: center; padding: 10px;">No daily electrical log recorded yet.</div>`;
+        return;
+    }
+
+    container.innerHTML = "";
+    elecLogs.forEach(log => {
+        const item = document.createElement('div');
+        item.className = 'log-item';
+        item.style.padding = "8px 0";
+        item.style.borderBottom = "1px solid #eee";
+        
+        item.innerHTML = `
+            <div style="color: #7f8c8d; font-weight: bold; margin-bottom: 3px;">${log.time}</div>
+            <div style="margin-left: 10px;">
+                ➔ <span style="color: #2196F3;">AC: <b>${log.acVolt}V / ${log.acCur}A</b> (${log.acPower || '0.00'}W)</span><br>
+                ➔ <span style="color: #27ae60;">DC: <b>${log.dcVolt}V / ${log.dcCur}A</b> (${log.dcPower || '0.00'}W)</span>
+            </div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function addLog(actionText, color = '#27ae60') {
+    const now = new Date();
+    const timeString = `[${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} - ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
     const logData = { time: timeString, text: actionText, color: color };
 
     let systemLogs = JSON.parse(localStorage.getItem('systemLogsHistory')) || [];
     systemLogs.push(logData);
-    
     if (systemLogs.length > 50) systemLogs.shift();
     
     localStorage.setItem('systemLogsHistory', JSON.stringify(systemLogs));
@@ -298,38 +308,28 @@ function addLog(actionText, color = '#27ae60') {
 }
 
 function renderSystemLogsUI() {
-    const logContainer = document.getElementById('historyLog');
-    if (!logContainer) return;
-
+    const container = document.getElementById('historyLog');
+    if (!container) return;
     let systemLogs = JSON.parse(localStorage.getItem('systemLogsHistory')) || [];
 
     if (systemLogs.length === 0) {
-        logContainer.innerHTML = `<div style="color: #888; text-align: center;">No activity recorded yet.</div>`;
+        container.innerHTML = `<div style="color: #888; text-align: center;">No activity recorded yet.</div>`;
         return;
     }
 
-    logContainer.innerHTML = "";
+    container.innerHTML = "";
     systemLogs.forEach(log => {
-        const logEntry = document.createElement('div');
-        logEntry.className = 'log-item';
-        logEntry.innerHTML = `<span style="color: #7f8c8d;">${log.time}</span> <span class="log-badge">➡</span> <span style="color: ${log.color};">${log.text}</span>`;
-        logContainer.appendChild(logEntry);
+        const item = document.createElement('div');
+        item.className = 'log-item';
+        item.innerHTML = `<span style="color: #7f8c8d;">${log.time}</span> ➡ <span style="color: ${log.color};">${log.text}</span>`;
+        container.appendChild(item);
     });
-
-    logContainer.scrollTop = logContainer.scrollHeight;
+    container.scrollTop = container.scrollHeight;
 }
 
-// ==========================================
-// 8. WATER USAGE SUMMARY SYSTEM (2 DAYS)
-// ==========================================
 function updateWaterUsage(currentFlow) {
-    // បង្ហាញតម្លៃបច្ចុប្បន្នផ្ទាល់ពី ESP32 Sensor
     const flowEl = document.getElementById('flow');
     if (flowEl) flowEl.innerText = `${currentFlow.toFixed(1)} m³`;
-
-    // រក្សាទុកទិន្នន័យបច្ចុប្បន្នសម្រាប់ Summary Log
-    let accumulatedWater = currentFlow;
-    localStorage.setItem('accumulatedWater', accumulatedWater);
 
     const now = new Date();
     const lastReset = localStorage.getItem('lastWaterResetDate');
@@ -337,57 +337,80 @@ function updateWaterUsage(currentFlow) {
     if (!lastReset) {
         localStorage.setItem('lastWaterResetDate', now.toISOString());
     } else {
-        const lastResetDate = new Date(lastReset);
-        const diffInDays = (now.getTime() - lastResetDate.getTime()) / (1000 * 3600 * 24);
-
+        const diffInDays = (now.getTime() - new Date(lastReset).getTime()) / (1000 * 3600 * 24);
         if (diffInDays >= 2) {
-            saveAndShowWaterLog(lastResetDate, now, accumulatedWater);
+            saveAndShowWaterLog(new Date(lastReset), now, currentFlow);
             localStorage.setItem('lastWaterResetDate', now.toISOString());
         }
     }
     saveDashboardState();
 }
 
-function formatDateTime(date) {
-    const d = date.getDate().toString().padStart(2, '0');
-    const m = (date.getMonth() + 1).toString().padStart(2, '0');
-    const y = date.getFullYear();
-    const hrs = date.getHours().toString().padStart(2, '0');
-    const mins = date.getMinutes().toString().padStart(2, '0');
-    const secs = date.getSeconds().toString().padStart(2, '0');
-    return `${d}/${m}/${y} - ${hrs}:${mins}:${secs}`;
-}
-
 function saveAndShowWaterLog(startDate, endDate, totalM3) {
-    const startStr = formatDateTime(startDate);
-    const endStr = formatDateTime(endDate);
-    const logText = `[${startStr} ➔ ${endStr}] : សរុបការប្រើប្រាស់ទឹក = ${totalM3.toFixed(2)} m³`;
+    const formatDt = (d) => `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} - ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    const logText = `[${formatDt(startDate)} ➔ ${formatDt(endDate)}] : សរុបការប្រើប្រាស់ទឹក = ${totalM3.toFixed(2)} m³`;
 
     let waterHistory = JSON.parse(localStorage.getItem('waterHistoryLogs')) || [];
     waterHistory.unshift(logText);
     localStorage.setItem('waterHistoryLogs', JSON.stringify(waterHistory));
-
     renderWaterHistoryUI();
 }
 
 function renderWaterHistoryUI() {
-    const waterLogContainer = document.getElementById('waterUsageLog');
-    if (!waterLogContainer) return;
-
+    const container = document.getElementById('waterUsageLog');
+    if (!container) return;
     let waterHistory = JSON.parse(localStorage.getItem('waterHistoryLogs')) || [];
 
     if (waterHistory.length === 0) {
-        waterLogContainer.innerHTML = `<div style="color: #888; text-align: center;">មិនទាន់មានទិន្នន័យបូកសរុបនៅឡើយទេ។</div>`;
+        container.innerHTML = `<div style="color: #888; text-align: center;">មិនទាន់មានទិន្នន័យបូកសរុបនៅឡើយទេ។</div>`;
         return;
     }
 
-    waterLogContainer.innerHTML = "";
+    container.innerHTML = "";
     waterHistory.forEach(log => {
-        const parts = log.split(' : ');
-        const logEntry = document.createElement('div');
-        logEntry.className = 'log-item';
-        logEntry.style.marginBottom = '8px';
-        logEntry.innerHTML = `<span style="color: #2c3e50; font-weight: bold;">${parts[0]}</span> : <span class="water-badge">${parts[1].replace('សរុបការប្រើប្រាស់ទឹក = ', '')}</span>`;
-        waterLogContainer.appendChild(logEntry);
+        const item = document.createElement('div');
+        item.className = 'log-item';
+        item.innerText = log;
+        container.appendChild(item);
     });
+}
+
+// ==========================================
+// 7. SAVE & LOAD STATE
+// ==========================================
+function saveDashboardState() {
+    const getTxt = (id) => document.getElementById(id) ? document.getElementById(id).innerText : '';
+    const state = {
+        acCurrent: getTxt('acCurrent'),
+        dcCurrent: getTxt('dcCurrent'),
+        dcVolt: getTxt('Volt'),
+        acVolt: getTxt('volt'),
+        acPower: getTxt('acPower'),
+        dcPower: getTxt('dcPower'),
+        tank: getTxt('tank'),
+        flow: getTxt('flow'),
+        pump: getTxt('pump'),
+        motorLoad: getTxt('motorLoad')
+    };
+    localStorage.setItem('dashboardState', JSON.stringify(state));
+}
+
+function loadSavedData() {
+    const saved = JSON.parse(localStorage.getItem('dashboardState'));
+    if (saved) {
+        if (document.getElementById('acCurrent')) document.getElementById('acCurrent').innerText = saved.acCurrent || '0.00 A';
+        if (document.getElementById('dcCurrent')) document.getElementById('dcCurrent').innerText = saved.dcCurrent || '0.00 A';
+        if (document.getElementById('Volt')) document.getElementById('Volt').innerText = saved.dcVolt || '0.0 V';
+        if (document.getElementById('volt')) document.getElementById('volt').innerText = saved.acVolt || '0.0 V';
+        if (document.getElementById('acPower')) document.getElementById('acPower').innerText = saved.acPower || '0.00 W';
+        if (document.getElementById('dcPower')) document.getElementById('dcPower').innerText = saved.dcPower || '0.00 W';
+        if (document.getElementById('tank')) document.getElementById('tank').innerText = saved.tank || 'LOW';
+        if (document.getElementById('flow')) document.getElementById('flow').innerText = saved.flow || '0.0 m³';
+        if (document.getElementById('pump')) document.getElementById('pump').innerText = saved.pump || 'OFF';
+        if (document.getElementById('motorLoad')) document.getElementById('motorLoad').innerText = saved.motorLoad || 'NORMAL';
+    }
+
+    renderElectricalLogsUI();
+    renderSystemLogsUI();
+    renderWaterHistoryUI();
 }
