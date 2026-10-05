@@ -8,10 +8,12 @@ app.use(cors());
 app.use(express.json());
 
 // -------------------------------------------------------------
-// ១. ភ្ជាប់ទៅកាន់ Supabase Database
+// ១. ភ្ជាប់ទៅកាន់ Supabase Database 
+// (ប្រើ Secret Key ដើម្បីឱ្យ Backend មានសិទ្ធិ Insert ១០០%)
 // -------------------------------------------------------------
+// កូដដែលសុវត្ថិភាព (គ្មាន Secret Key ផ្ទាល់ខ្លួននៅក្នុងកូដទេ)
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://eososxmzucdheycreenpa.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable__YIpgqFdy6bpuVemfI3ntw_xfj_sthQ';
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -32,11 +34,8 @@ mqttClient.on('connect', () => {
   console.log('✅ Connected to HiveMQ Cloud Broker!');
   
   mqttClient.subscribe('irrigation/sensors/data', (err) => {
-    if (!err) {
-      console.log('📡 Subscribed to topic: irrigation/sensors/data');
-    } else {
-      console.error('❌ Subscription Error:', err);
-    }
+    if (!err) console.log('📡 Subscribed to topic: irrigation/sensors/data');
+    else console.error('❌ Subscription Error:', err);
   });
 
   mqttClient.subscribe('irrigation/pump/status', (err) => {
@@ -45,7 +44,7 @@ mqttClient.on('connect', () => {
 });
 
 // -------------------------------------------------------------
-// ៣. ទទួលសារពី HiveMQ រួច Insert ចូល Supabase Table (sensor_logs)
+// ៣. ទទួលសារពី HiveMQ រួច Insert ចូល Supabase (sensor_logs)
 // -------------------------------------------------------------
 mqttClient.on('message', async (topic, message) => {
   try {
@@ -55,23 +54,21 @@ mqttClient.on('message', async (topic, message) => {
     if (topic === 'irrigation/sensors/data') {
       const data = JSON.parse(rawMsg);
 
-      // រៀបចំទិន្នន័យ Insert ចូល Supabase sensor_logs table
-      const { data: insertedData, error } = await supabase
-        .from('sensor_logs')
-        .insert([
-          {
-            ac_current:  data.acCurrent  !== undefined ? data.acCurrent  : data.ac_current,
-            ac_voltage:  data.acVoltage  !== undefined ? data.acVoltage  : data.ac_voltage,
-            dc_current:  data.dcCurrent  !== undefined ? data.dcCurrent  : data.dc_current,
-            dc_voltage:  data.dcVoltage  !== undefined ? data.dcVoltage  : data.dc_voltage,
-            ac_power:    data.acPower    !== undefined ? data.acPower    : data.ac_power,
-            dc_power:    data.dcPower    !== undefined ? data.dcPower    : data.dc_power,
-            water_flow:  data.waterFlow  !== undefined ? data.waterFlow  : data.water_flow,
-            pump_status: data.pumpStatus || data.pump_status || "UNKNOWN",
-            tank_level:  data.tankLevel  || data.tank_level,
-            motor_load:  data.motorLoad  || data.motor_load
-          }
-        ]);
+      // រៀបចំទិន្នន័យឱ្យត្រូវតាម Column ក្នុង Supabase
+      const record = {
+        ac_current:  data.ac_current  ?? data.acCurrent  ?? 0,
+        ac_voltage:  data.ac_voltage  ?? data.acVoltage  ?? 0,
+        dc_current:  data.dc_current  ?? data.dcCurrent  ?? 0,
+        dc_voltage:  data.dc_voltage  ?? data.dcVoltage  ?? 0,
+        ac_power:    data.ac_power    ?? data.acPower    ?? (data.ac_voltage * data.ac_current) ?? 0,
+        dc_power:    data.dc_power    ?? data.dcPower    ?? (data.dc_voltage * data.dc_current) ?? 0,
+        water_flow:  data.water_flow  ?? data.waterFlow  ?? 0,
+        pump_status: data.pump_status ?? data.pumpStatus ?? "OFF",
+        tank_level:  data.tank_level  ?? data.tankLevel  ?? "UNKNOWN",
+        motor_load:  data.motor_load  ?? data.motorLoad  ?? "NORMAL"
+      };
+
+      const { error } = await supabase.from('sensor_logs').insert([record]);
 
       if (error) {
         console.error('❌ Supabase Insert Error:', error.message);
@@ -102,5 +99,5 @@ app.get('/api/history', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 Node.js Server running on port ${PORT}`));
