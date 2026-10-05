@@ -1,6 +1,7 @@
 const express = require('express');
 const mqtt = require('mqtt');
 const cors = require('cors');
+const fetch = require('node-fetch'); // បន្ថែម node-fetch ត្រង់នេះ
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -8,13 +9,10 @@ app.use(cors());
 app.use(express.json());
 
 // -------------------------------------------------------------
-// ១. ភ្ជាប់ទៅកាន់ Supabase Database (សុវត្ថិភាព គ្មាន Key ផ្ទាល់)
+// ១. ភ្ជាប់ទៅកាន់ Supabase (ទាញយក Key ពី Render Environment)
 // -------------------------------------------------------------
-const rawUrl = process.env.SUPABASE_URL || '';
-const SUPABASE_URL = rawUrl.trim();
-
-const rawKey = process.env.SUPABASE_KEY || '';
-const SUPABASE_KEY = rawKey.trim();
+const SUPABASE_URL = (process.env.SUPABASE_URL || '').trim();
+const SUPABASE_KEY = (process.env.SUPABASE_KEY || '').trim();
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
@@ -72,7 +70,7 @@ mqttClient.on('message', async (topic, message) => {
       const { error } = await supabase.from('sensor_logs').insert([record]);
 
       if (error) {
-        console.error('❌ Supabase Insert Error:', error.message || error);
+        console.error('❌ Supabase Insert Error:', error.message || JSON.stringify(error));
       } else {
         console.log('💾 Sensor Log successfully saved to Supabase Database!');
       }
