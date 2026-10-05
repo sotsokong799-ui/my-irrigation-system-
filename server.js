@@ -8,14 +8,20 @@ app.use(cors());
 app.use(express.json());
 
 // -------------------------------------------------------------
-// ១. ភ្ជាប់ទៅកាន់ Supabase Database 
-// (ប្រើ Secret Key ដើម្បីឱ្យ Backend មានសិទ្ធិ Insert ១០០%)
+// ១. ភ្ជាប់ទៅកាន់ Supabase Database (សុវត្ថិភាព គ្មាន Key ផ្ទាល់)
 // -------------------------------------------------------------
-// កូដដែលសុវត្ថិភាព (គ្មាន Secret Key ផ្ទាល់ខ្លួននៅក្នុងកូដទេ)
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://eososxmzucdheycreenpa.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const rawUrl = process.env.SUPABASE_URL || '';
+const SUPABASE_URL = rawUrl.trim();
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const rawKey = process.env.SUPABASE_KEY || '';
+const SUPABASE_KEY = rawKey.trim();
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false
+  }
+});
 
 // -------------------------------------------------------------
 // ២. ភ្ជាប់ទៅកាន់ HiveMQ Cloud Broker
@@ -37,10 +43,6 @@ mqttClient.on('connect', () => {
     if (!err) console.log('📡 Subscribed to topic: irrigation/sensors/data');
     else console.error('❌ Subscription Error:', err);
   });
-
-  mqttClient.subscribe('irrigation/pump/status', (err) => {
-    if (!err) console.log('📡 Subscribed to topic: irrigation/pump/status');
-  });
 });
 
 // -------------------------------------------------------------
@@ -54,7 +56,6 @@ mqttClient.on('message', async (topic, message) => {
     if (topic === 'irrigation/sensors/data') {
       const data = JSON.parse(rawMsg);
 
-      // រៀបចំទិន្នន័យឱ្យត្រូវតាម Column ក្នុង Supabase
       const record = {
         ac_current:  data.ac_current  ?? data.acCurrent  ?? 0,
         ac_voltage:  data.ac_voltage  ?? data.acVoltage  ?? 0,
@@ -71,7 +72,7 @@ mqttClient.on('message', async (topic, message) => {
       const { error } = await supabase.from('sensor_logs').insert([record]);
 
       if (error) {
-        console.error('❌ Supabase Insert Error:', error.message);
+        console.error('❌ Supabase Insert Error:', error.message || error);
       } else {
         console.log('💾 Sensor Log successfully saved to Supabase Database!');
       }
