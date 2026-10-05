@@ -16,13 +16,21 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ Connected to MongoDB Database'))
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// បង្កើត Schema សម្រាប់រក្សាទុក History Log
+// បង្កើត Schema ឲ្យគ្របដណ្តប់គ្រប់តម្លៃដែល ESP32 ផ្ញើមក
 const SensorLogSchema = new mongoose.Schema({
   acCurrent: Number,
+  acVoltage: Number,
+  dcCurrent: Number,
+  dcVoltage: Number,
+  acPower: Number,
+  dcPower: Number,
   waterFlow: Number,
   pumpStatus: String,
+  tankLevel: String,
+  motorLoad: String,
   timestamp: { type: Date, default: Date.now }
 });
+
 const SensorLog = mongoose.model('SensorLog', SensorLogSchema);
 
 // -------------------------------------------------------------
@@ -33,16 +41,26 @@ const options = {
   port: 8883,
   protocol: 'mqtts',
   username: 'MyMQTT',
-  password: '29072003Sot' // ⚠️ ដាក់ Password HiveMQ របស់អ្នកនៅទីនេះ
+  password: '29072003Sot'
 };
 
 const mqttClient = mqtt.connect(`mqtts://${HIVEMQ_HOST}`, options);
 
 mqttClient.on('connect', () => {
   console.log('✅ Connected to HiveMQ Cloud Broker!');
-  // Subscribe ទៅ Topic ដែល ESP32 ផ្ញើមក
-  mqttClient.subscribe('irrigation/sensor/data', (err) => {
-    if (!err) console.log('📡 Subscribed to topic: irrigation/sensor/data');
+  
+  // ✅ កែសម្រួល Topic ឲ្យត្រូវជាមួយ ESP32 (មាន 's' នៅ sensors)
+  mqttClient.subscribe('irrigation/sensors/data', (err) => {
+    if (!err) {
+      console.log('📡 Subscribed to topic: irrigation/sensors/data');
+    } else {
+      console.error('❌ Subscription Error:', err);
+    }
+  });
+
+  // Subscribe លើ Topic Status របស់ Pump ផងដែរ (ប្រសិនបើចង់ Save ពេល Pump ផ្លាស់ប្តូរ Status)
+  mqttClient.subscribe('irrigation/pump/status', (err) => {
+    if (!err) console.log('📡 Subscribed to topic: irrigation/pump/status');
   });
 });
 
@@ -51,18 +69,29 @@ mqttClient.on('connect', () => {
 // -------------------------------------------------------------
 mqttClient.on('message', async (topic, message) => {
   try {
-    const data = JSON.parse(message.toString());
-    console.log('📩 Received Data:', data);
+    const rawMsg = message.toString();
+    console.log(`📩 Received Data from [${topic}]:`, rawMsg);
 
-    const newLog = new SensorLog({
-      acCurrent: data.acCurrent,
-      waterFlow: data.waterFlow,
-      pumpStatus: data.pumpStatus
-    });
-    await newLog.save();
-    console.log('💾 Log saved to MongoDB Database!');
+    if (topic === 'irrigation/sensors/data') {
+      const data = JSON.parse(rawMsg);
+
+      // បង្កើត Object រក្សាទុកក្នុង DB (ទ្រទ្រង់ទាំង Snake_case និង CamelCase)
+      const newLog = new SensorLog({
+        acCurrent:  data.acCurrent  !== undefined ? data.acCurrent  : data.ac_current,
+        acVoltage:  data.acVoltage  !== undefined ? data.acVoltage  : data.ac_voltage,
+        dcCurrent:  data.dcCurrent  !== undefined ? data.dcCurrent  : data.dc_current,
+        dcVoltage:  data.dcVoltage  !== undefined ? data.dcVoltage  : data.dc_voltage,
+        waterFlow:  data.waterFlow  !== undefined ? data.waterFlow  : data.water_flow,
+        pumpStatus: data.pumpStatus || data.pump_status || "UNKNOWN",
+        tankLevel:  data.tankLevel  || data.tank_level,
+        motorLoad:  data.motorLoad  || data.motor_load
+      });
+
+      await newLog.save();
+      console.log('💾 Sensor Log successfully saved to MongoDB Database!');
+    }
   } catch (error) {
-    console.error('Error parsing MQTT message:', error);
+    console.error('❌ Error parsing or saving MQTT message:', error.message);
   }
 });
 
