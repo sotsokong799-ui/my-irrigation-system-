@@ -1,23 +1,41 @@
 const express = require('express');
 const mqtt = require('mqtt');
 const cors = require('cors');
-const admin = require('firebase-admin');
-
-// ទាញយក Firebase Service Account Key របស់អ្នក (អាច Download ពី Firebase Console -> Project Settings -> Service Accounts)
-const serviceAccount = require('./firebase-service-key.json');
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://my-irrigation-system-default-rtdb.firebaseio.com" // ជំនួសដោយ Database URL របស់អ្នក
-});
-
-const db = admin.database();
+const mongoose = require('mongoose');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ភ្ជាប់ទៅកាន់ HiveMQ Cloud Broker
+// -------------------------------------------------------------
+// ១. ភ្ជាប់ទៅកាន់ MongoDB (សូមជំនួស MONGODB_URI របស់អ្នកនៅទីនេះ)
+// -------------------------------------------------------------
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://<username>:<password>@cluster.mongodb.net/irrigation_db?retryWrites=true&w=majority";
+
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log('✅ Connected to MongoDB Atlas!'))
+  .catch((err) => console.error('❌ MongoDB Connection Error:', err));
+
+// កំណត់ Schema និង Model សម្រាប់ Sensor Data
+const sensorSchema = new mongoose.Schema({
+  ac_current: { type: Number, default: 0 },
+  ac_voltage: { type: Number, default: 0 },
+  dc_current: { type: Number, default: 0 },
+  dc_voltage: { type: Number, default: 0 },
+  ac_power: { type: Number, default: 0 },
+  dc_power: { type: Number, default: 0 },
+  water_flow: { type: Number, default: 0 },
+  pump_status: { type: String, default: "OFF" },
+  tank_level: { type: String, default: "UNKNOWN" },
+  motor_load: { type: String, default: "NORMAL" },
+  timestamp: { type: Number, default: Date.now }
+});
+
+const SensorLog = mongoose.model('SensorLog', sensorSchema);
+
+// -------------------------------------------------------------
+// ២. ភ្ជាប់ទៅកាន់ HiveMQ Cloud Broker
+// -------------------------------------------------------------
 const HIVEMQ_HOST = "4a8939aca73049848878fb5e2c8c332c.s1.eu.hivemq.cloud"; 
 const options = {
   port: 8883,
@@ -37,7 +55,9 @@ mqttClient.on('connect', () => {
   });
 });
 
-// ទទួលសារពី MQTT រួច Save ចូល Firebase Realtime Database
+// -------------------------------------------------------------
+// ៣. ទទួលសារពី MQTT រួច Save ចូល MongoDB
+// -------------------------------------------------------------
 mqttClient.on('message', async (topic, message) => {
   try {
     const rawMsg = message.toString();
@@ -46,7 +66,7 @@ mqttClient.on('message', async (topic, message) => {
     if (topic === 'irrigation/sensors/data') {
       const data = JSON.parse(rawMsg);
 
-      const record = {
+      const record = new SensorLog({
         ac_current:  data.ac_current  ?? data.acCurrent  ?? 0,
         ac_voltage:  data.ac_voltage  ?? data.acVoltage  ?? 0,
         dc_current:  data.dc_current  ?? data.dcCurrent  ?? 0,
@@ -58,23 +78,23 @@ mqttClient.on('message', async (topic, message) => {
         tank_level:  data.tank_level  ?? data.tankLevel  ?? "UNKNOWN",
         motor_load:  data.motor_load  ?? data.motorLoad  ?? "NORMAL",
         timestamp:   Date.now()
-      };
+      });
 
-      // បញ្ចូលទិន្នន័យចូល Firebase Realtime Database
-      await db.ref('sensor_logs').push(record);
-      console.log('💾 Sensor Log successfully saved to Firebase Database!');
+      await record.save();
+      console.log('💾 Sensor Log successfully saved to MongoDB!');
     }
   } catch (error) {
     console.error('❌ Error parsing or saving MQTT message:', error.message);
   }
 });
 
-// API សម្រាប់ទាញយក History ទិន្នន័យ
+// -------------------------------------------------------------
+// ៤. API សម្រាប់ Web Dashboard ទាញយក History ពី MongoDB
+// -------------------------------------------------------------
 app.get('/api/history', async (req, res) => {
   try {
-    const snapshot = await db.ref('sensor_logs').limitToLast(50).once('value');
-    const data = snapshot.val();
-    res.json(data ? Object.values(data).reverse() : []);
+    const logs = await SensorLog.find().sort({ timestamp: -1 }).limit(50);
+    res.json(logs);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
