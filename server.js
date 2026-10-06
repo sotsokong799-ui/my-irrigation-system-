@@ -8,9 +8,9 @@ app.use(cors());
 app.use(express.json());
 
 // -------------------------------------------------------------
-// ១. ភ្ជាប់ទៅកាន់ MongoDB (សូមជំនួស MONGODB_URI របស់អ្នកនៅទីនេះ)
+// ១. ភ្ជាប់ទៅកាន់ MongoDB Atlas
 // -------------------------------------------------------------
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://<username>:<password>@cluster.mongodb.net/irrigation_db?retryWrites=true&w=majority";
+const MONGODB_URI = "mongodb+srv://sotsokong799_db_user:KYY6BzyV888qDCgE@cluster0.hkyiehs.mongodb.net/irrigation_db?appName=Cluster0";
 
 mongoose.connect(MONGODB_URI)
   .then(() => console.log('✅ Connected to MongoDB Atlas!'))
@@ -93,7 +93,7 @@ mqttClient.on('message', async (topic, message) => {
 // -------------------------------------------------------------
 app.get('/api/history', async (req, res) => {
   try {
-    const logs = await SensorLog.find().sort({ timestamp: -1 }).limit(50);
+    const logs = `await SensorLog.find().sort({ timestamp: -1 }).limit(50);` // trimmed for display
     res.json(logs);
   } catch (err) {
     res.status(500).json({ error: err.message });
