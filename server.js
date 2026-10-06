@@ -1,16 +1,13 @@
 const express = require('express');
 const mqtt = require('mqtt');
 const cors = require('cors');
-const fetch = require('node-fetch'); // បន្ថែម node-fetch ត្រង់នេះ
+const fetch = require('node-fetch');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// -------------------------------------------------------------
-// ១. ភ្ជាប់ទៅកាន់ Supabase (ទាញយក Key ពី Render Environment)
-// -------------------------------------------------------------
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').trim();
 const SUPABASE_KEY = (process.env.SUPABASE_KEY || '').trim();
 
@@ -20,13 +17,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     autoRefreshToken: false
   },
   global: {
-    fetch: fetch // ប្រើ node-fetch ការពារ fetch failed លើ Render
+    fetch: fetch
   }
 });
 
-// -------------------------------------------------------------
-// ២. ភ្ជាប់ទៅកាន់ HiveMQ Cloud Broker
-// -------------------------------------------------------------
 const HIVEMQ_HOST = "4a8939aca73049848878fb5e2c8c332c.s1.eu.hivemq.cloud"; 
 const options = {
   port: 8883,
@@ -46,9 +40,6 @@ mqttClient.on('connect', () => {
   });
 });
 
-// -------------------------------------------------------------
-// ៣. ទទួលសារពី HiveMQ រួច Insert ចូល Supabase (sensor_logs)
-// -------------------------------------------------------------
 mqttClient.on('message', async (topic, message) => {
   try {
     const rawMsg = message.toString();
@@ -83,9 +74,6 @@ mqttClient.on('message', async (topic, message) => {
   }
 });
 
-// -------------------------------------------------------------
-// ៤. API សម្រាប់ Web Dashboard ទាញយក History ពី Supabase
-// -------------------------------------------------------------
 app.get('/api/history', async (req, res) => {
   try {
     const { data, error } = await supabase
